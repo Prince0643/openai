@@ -131,6 +131,35 @@ class GymMasterAPI {
    * GET /portal/api/v1/booking/classes/schedule
    */
   async getClassSchedule(week, companyId = null) {
+    // First, try calling with just the API key (most reliable method)
+    const baseParams = new URLSearchParams({
+      api_key: this.apiKey
+    });
+    
+    console.log(`Calling GymMaster API with base params: ${baseParams.toString()}`);
+    const baseResponse = await this.makeRequest(`/portal/api/v1/booking/classes/schedule?${baseParams.toString()}`, {
+      method: 'GET'
+    });
+    
+    console.log("GymMaster API base response:", JSON.stringify(baseResponse, null, 2));
+    
+    // Check if we got results with just the API key
+    if (baseResponse.result && Array.isArray(baseResponse.result) && baseResponse.result.length > 0) {
+      console.log("Successfully retrieved classes with base parameters");
+      return baseResponse.result.map(classItem => ({
+        classId: classItem.id,
+        name: classItem.bookingname || classItem.name,
+        coach: classItem.staffname || null,
+        branch: classItem.companyname || null,
+        start: `${classItem.arrival_iso}T${classItem.starttime}`,
+        end: `${classItem.arrival_iso}T${classItem.endtime}`,
+        seatsAvailable: classItem.spacesfree
+      }));
+    }
+    
+    // If no results with base params, try with the provided parameters
+    console.log("No results with base parameters, trying with additional parameters");
+    
     // Build parameters - only add parameters if they are provided
     const params = new URLSearchParams({
       api_key: this.apiKey

@@ -651,12 +651,20 @@ app.post("/make/webhook", async (req, res) => {
                       const date_to = functionArgs.date_to;
                       const branchId = functionArgs.branchId;
                       
-                      // For GymMaster API, we typically just need a week parameter
-                      // If date_from is provided, use it as the week parameter
-                      // Otherwise, use today's date
+                      // Validate the date - if it's too old, use today's date instead
                       let weekParam = date_from;
+                      const today = new Date();
+                      const requestedDate = new Date(date_from);
+                      
+                      // If the requested date is more than a few days in the past, use today
+                      if (requestedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)) {
+                        console.log("Requested date is too old, using today's date instead");
+                        weekParam = today.toISOString().split('T')[0];
+                      }
+                      
+                      // If no date provided, use today's date
                       if (!weekParam) {
-                        weekParam = new Date().toISOString().split('T')[0];
+                        weekParam = today.toISOString().split('T')[0];
                       }
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
@@ -674,12 +682,20 @@ app.post("/make/webhook", async (req, res) => {
                       const date_to = functionArgs.date_to;
                       const branchId = functionArgs.branchId;
                       
-                      // For GymMaster API, we typically just need a week parameter
-                      // If date_from is provided, use it as the week parameter
-                      // Otherwise, use today's date
+                      // Validate the date - if it's too old, use today's date instead
                       let weekParam = date_from;
+                      const today = new Date();
+                      const requestedDate = new Date(date_from);
+                      
+                      // If the requested date is more than a few days in the past, use today
+                      if (requestedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)) {
+                        console.log("Requested date is too old, using today's date instead");
+                        weekParam = today.toISOString().split('T')[0];
+                      }
+                      
+                      // If no date provided, use today's date
                       if (!weekParam) {
-                        weekParam = new Date().toISOString().split('T')[0];
+                        weekParam = today.toISOString().split('T')[0];
                       }
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
