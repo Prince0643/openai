@@ -416,7 +416,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
   try {
     const { tool_name, tool_args } = req.body;
     
-    console.log(`Handling tool call: ${tool_name}`, tool_args);
+    console.log(`Handling tool call: ${tool_name}`, JSON.stringify(tool_args, null, 2));
     
     // Route to appropriate tool handler
     switch (tool_name) {
@@ -440,9 +440,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
           const schedule = await gymMaster.getClassSchedule(tool_args.date_from, tool_args.branchId);
+          console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
           return res.json(schedule);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
         }
         
@@ -452,9 +455,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
           const schedule = await gymMaster.getClassSchedule(tool_args.date_from, tool_args.branchId);
+          console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
           return res.json(schedule);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
         }
         
@@ -463,9 +469,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster getClassSeats with:", tool_args.classId);
           const seats = await gymMaster.getClassSeats(tool_args.classId);
+          console.log("GymMaster response:", JSON.stringify(seats, null, 2));
           return res.json(seats);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot get class seats: " + e.message });
         }
         
@@ -474,9 +483,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster bookClass with:", tool_args.token, tool_args.classId);
           const booking = await gymMaster.bookClass(tool_args.token, tool_args.classId);
+          console.log("GymMaster response:", JSON.stringify(booking, null, 2));
           return res.json(booking);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot book class: " + e.message });
         }
         
@@ -485,9 +497,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster cancelBooking with:", tool_args.token, tool_args.bookingId);
           const cancellation = await gymMaster.cancelBooking(tool_args.token, tool_args.bookingId);
+          console.log("GymMaster response:", JSON.stringify(cancellation, null, 2));
           return res.json(cancellation);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot cancel booking: " + e.message });
         }
         
@@ -496,9 +511,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster getMemberMemberships with:", tool_args.token);
           const memberships = await gymMaster.getMemberMemberships(tool_args.token);
+          console.log("GymMaster response:", JSON.stringify(memberships, null, 2));
           return res.json(memberships);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot get memberships: " + e.message });
         }
         
@@ -507,13 +525,17 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster listMemberships");
           const memberships = await gymMaster.listMemberships();
+          console.log("GymMaster listMemberships response:", JSON.stringify(memberships, null, 2));
           const clubs = await gymMaster.listClubs();
+          console.log("GymMaster listClubs response:", JSON.stringify(clubs, null, 2));
           return res.json({
             classes: [], // In a real implementation, you would fetch classes
             memberships: memberships
           });
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot list catalog: " + e.message });
         }
         
@@ -522,14 +544,17 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
+          console.log("Calling GymMaster createProspect with:", tool_args.name, tool_args.phone, tool_args.email, tool_args.interest);
           const lead = await gymMaster.createProspect(
             tool_args.name, 
             tool_args.phone, 
             tool_args.email, 
             tool_args.interest
           );
+          console.log("GymMaster response:", JSON.stringify(lead, null, 2));
           return res.json(lead);
         } catch (e) {
+          console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot save lead: " + e.message });
         }
         

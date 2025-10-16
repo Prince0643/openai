@@ -131,18 +131,44 @@ class GymMasterAPI {
    * GET /portal/api/v1/booking/classes/schedule
    */
   async getClassSchedule(week, companyId = null) {
+    // Ensure week is in YYYY-MM-DD format
+    let formattedWeek = week;
+    console.log("Original week parameter:", week);
+    
+    if (week && !/^\d{4}-\d{2}-\d{2}$/.test(week)) {
+      // If not in correct format, try to convert
+      try {
+        const date = new Date(week);
+        formattedWeek = date.toISOString().split('T')[0];
+        console.log("Converted week parameter:", formattedWeek);
+      } catch (e) {
+        // If conversion fails, use today's date
+        formattedWeek = new Date().toISOString().split('T')[0];
+        console.log("Using today's date:", formattedWeek);
+      }
+    }
+    
+    // If no week provided, use today
+    if (!formattedWeek) {
+      formattedWeek = new Date().toISOString().split('T')[0];
+      console.log("No week provided, using today:", formattedWeek);
+    }
+    
     const params = new URLSearchParams({
       api_key: this.apiKey,
-      week: week
+      week: formattedWeek
     });
     
     if (companyId) {
       params.append('companyid', companyId);
     }
     
+    console.log(`Calling GymMaster API with week: ${formattedWeek}`);
     const response = await this.makeRequest(`/portal/api/v1/booking/classes/schedule?${params.toString()}`, {
       method: 'GET'
     });
+    
+    console.log("GymMaster API response:", JSON.stringify(response, null, 2));
     
     return response.result.map(classItem => ({
       classId: classItem.id,

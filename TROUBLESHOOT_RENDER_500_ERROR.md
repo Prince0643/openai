@@ -4,106 +4,125 @@ This guide will help you resolve the 500 Internal Server Error you're experienci
 
 ## Current Status Analysis
 
-Based on your logs and health check:
-```json
-{
-  "status": "OK",
-  "timestamp": "2025-10-16T15:08:10.418Z",
-  "config": {
-    "gymmaster": true,
-    "backendKey": true,
-    "openai": true
-  },
-  "env": {
-    "GYMMASTER_API_KEY": "SET",
-    "GYMMASTER_BASE_URL": "SET",
-    "BACKEND_API_KEY": "SET",
-    "OPENAI_API_KEY": "SET"
+Based on your testing:
+- Simple messages like "hi" work correctly
+- Complex requests like "show me the available classes" cause 500 errors
+
+This tells us that the basic webhook endpoint is working, but there's an issue when the OpenAI assistant tries to call tools that interact with the GymMaster API.
+
+## Identified Issue: GymMaster API Integration Problems
+
+When you ask for "available classes", the OpenAI assistant tries to call the `get_schedule_public` tool, which requires calling the GymMaster API. The 500 error occurs during this process.
+
+## Solution: Add Better Error Handling and Logging
+
+Let's modify your application to add better error handling and logging to identify the exact issue:
+
+1. **Add detailed logging to the tool-call endpoint** in [openaitomanychat.js](file:///c%3A/Users/CH/Downloads/openaitomanychat/openaitomanychat.js):
+
+Find the tool-call endpoint (around line 414) and add more detailed logging:
+
+```javascript
+// New endpoint: Handle tool calls from OpenAI Assistant
+app.post("/tool-call", requireBackendKey, async (req, res) => {
+  try {
+    const { tool_name, tool_args } = req.body;
+    
+    console.log(`Handling tool call: ${tool_name}`, JSON.stringify(tool_args, null, 2));
+    
+    // Route to appropriate tool handler
+    switch (tool_name) {
+      case "get_schedule_public":
+        if (!gymMaster) {
+          return res.status(500).json({ error: true, message: "GymMaster API not configured" });
+        }
+        try {
+          console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
+          const schedule = await gymMaster.getClassSchedule(tool_args.date_from, tool_args.branchId);
+          console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
+          return res.json(schedule);
+        } catch (e) {
+          console.error("GymMaster API error:", e);
+          return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
+        }
+```
+
+2. **Add date format validation** to the GymMaster API calls:
+
+In [gymmaster.js](file:///c%3A/Users/CH/Downloads/openaitomanychat/gymmaster.js), modify the `getClassSchedule` method to ensure proper date formatting:
+
+```javascript
+/**
+ * Get class schedule
+ * GET /portal/api/v1/booking/classes/schedule
+ */
+async getClassSchedule(week, companyId = null) {
+  // Ensure week is in YYYY-MM-DD format
+  let formattedWeek = week;
+  if (week && !/^\d{4}-\d{2}-\d{2}$/.test(week)) {
+    // If not in correct format, try to convert
+    try {
+      const date = new Date(week);
+      formattedWeek = date.toISOString().split('T')[0];
+    } catch (e) {
+      // If conversion fails, use today's date
+      formattedWeek = new Date().toISOString().split('T')[0];
+    }
   }
+  
+  // If no week provided, use today
+  if (!formattedWeek) {
+    formattedWeek = new Date().toISOString().split('T')[0];
+  }
+  
+  const params = new URLSearchParams({
+    api_key: this.apiKey,
+    week: formattedWeek
+  });
+  
+  if (companyId) {
+    params.append('companyid', companyId);
+  }
+  
+  console.log(`Calling GymMaster API with week: ${formattedWeek}`);
+  const response = await this.makeRequest(`/portal/api/v1/booking/classes/schedule?${params.toString()}`, {
+    method: 'GET'
+  });
+  
+  return response.result.map(classItem => ({
+    classId: classItem.id,
+    name: classItem.bookingname || classItem.name,
+    coach: classItem.staffname || null,
+    branch: classItem.companyname || null,
+    start: `${classItem.arrival_iso}T${classItem.starttime}`,
+    end: `${classItem.arrival_iso}T${classItem.endtime}`,
+    seatsAvailable: classItem.spacesfree
+  }));
 }
-```
-
-Your application is now working correctly! The "404 Not Found" error when accessing the root URL (`https://openai-o3ba.onrender.com/`) is expected because your application doesn't have a root route defined.
-
-## Identified Issue: Character Encoding Problem
-
-Looking at the exact request Make.com is sending:
-```json
-{
-  "message": "show today's classes at Omni Kuta.",
-  "userId": "371492018",
-  "threadId": ""
-}
-```
-
-The issue is likely caused by the smart quote character (`'`) in "today's". This character might be causing JSON parsing issues or other problems in your application.
-
-## Solution: Add Character Encoding Handling
-
-Let's modify your application to handle character encoding issues properly. Add this middleware to your [openaitomanychat.js](file:///c%3A/Users/CH/Downloads/openaitomanychat/openaitomanychat.js) file:
-
-1. Find the section where you have:
-```javascript
-app.use(express.json());
-```
-
-2. Replace it with:
-```javascript
-// Add proper JSON parsing with character encoding handling
-app.use(express.json({ 
-  limit: '10mb',
-  type: 'application/json'
-}));
-
-// Add URL encoding middleware
-app.use(express.urlencoded({ extended: true }));
-```
-
-## Alternative Solution: Test with Escaped Characters
-
-Try sending the request with the apostrophe properly escaped:
-
-```bash
-curl -X POST "https://openai-o3ba.onrender.com/make/webhook" \
-  -H "Content-Type: application/json" \
-  -d "{\"message\": \"show today\'s classes at Omni Kuta.\", \"userId\": \"371492018\", \"threadId\": \"\"}"
 ```
 
 ## Immediate Action Items
 
-1. **Check Render logs** when Make.com makes requests to see specific error messages
-2. **Test with the curl command above** to see if character encoding is the issue
-3. **Modify your application** to handle character encoding properly as shown above
+1. **Check Render logs** for specific error messages when requesting class schedules
+2. **Add the enhanced logging** as shown above to identify the exact point of failure
+3. **Test with a specific date** like "show me classes for 2025-10-16" to see if date formatting is the issue
 
-## If Character Encoding Isn't the Issue
+## Alternative Testing
 
-If the character encoding solution doesn't work, the issue might be:
+Try asking the assistant more specific questions like:
+- "What classes are available today?" (instead of "show me the available classes")
+- "What classes are available on 2025-10-16?"
 
-1. **OpenAI API Issues**:
-   - Check if your OpenAI API key is valid and has the necessary permissions
-   - Verify that your assistant ID `asst_xy382A6ksEJ9JwYfSyVDfSBp` is correct
+This will help determine if the issue is with how the assistant interprets your request or with the actual API calls.
 
-2. **Timeout Issues**:
-   - OpenAI processing might be taking too long
-   - Make.com might have a shorter timeout than your 30-second limit
+## If Issues Persist
 
-3. **Rate Limiting**:
-   - You might be hitting OpenAI rate limits
-
-## How to Debug Further
-
-1. **Check Render logs** for specific error messages when the webhook is called
-2. **Add more detailed logging** to your webhook endpoint:
-   ```javascript
-   app.post("/make/webhook", async (req, res) => {
-     console.log("Webhook called with body:", JSON.stringify(req.body, null, 2));
-     // ... rest of your code
-   });
-   ```
-
-3. **Test your OpenAI assistant directly** using the test script to make sure it's working:
+1. **Run the test script** to verify GymMaster API connectivity:
    ```bash
-   node test_assistant.js
+   node test_integrations.js
    ```
 
-The most likely cause is the character encoding issue with the smart quote in "today's". Try the solutions above and check your logs for specific error messages.
+2. **Check your GymMaster API key** and base URL are correct
+3. **Verify the GymMaster API is accessible** from Render (some APIs have IP restrictions)
+
+The most likely cause is that the assistant is sending an invalid date format to the GymMaster API when trying to fetch class schedules.
