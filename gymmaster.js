@@ -131,44 +131,48 @@ class GymMasterAPI {
    * GET /portal/api/v1/booking/classes/schedule
    */
   async getClassSchedule(week, companyId = null) {
-    // Ensure week is in YYYY-MM-DD format
-    let formattedWeek = week;
-    console.log("Original week parameter:", week);
+    // Build parameters - only add parameters if they are provided
+    const params = new URLSearchParams({
+      api_key: this.apiKey
+    });
     
-    if (week && !/^\d{4}-\d{2}-\d{2}$/.test(week)) {
-      // If not in correct format, try to convert
-      try {
-        const date = new Date(week);
-        formattedWeek = date.toISOString().split('T')[0];
-        console.log("Converted week parameter:", formattedWeek);
-      } catch (e) {
-        // If conversion fails, use today's date
-        formattedWeek = new Date().toISOString().split('T')[0];
-        console.log("Using today's date:", formattedWeek);
+    // Only add week parameter if provided and not empty
+    if (week && week.trim() !== '') {
+      // Ensure week is in YYYY-MM-DD format if provided
+      let formattedWeek = week;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(week)) {
+        // If not in correct format, try to convert
+        try {
+          const date = new Date(week);
+          formattedWeek = date.toISOString().split('T')[0];
+        } catch (e) {
+          // If conversion fails, don't use the week parameter
+          formattedWeek = null;
+        }
+      }
+      
+      if (formattedWeek) {
+        params.append('week', formattedWeek);
       }
     }
     
-    // If no week provided, use today
-    if (!formattedWeek) {
-      formattedWeek = new Date().toISOString().split('T')[0];
-      console.log("No week provided, using today:", formattedWeek);
-    }
-    
-    const params = new URLSearchParams({
-      api_key: this.apiKey,
-      week: formattedWeek
-    });
-    
-    if (companyId) {
+    // Only add companyid parameter if provided and not empty
+    if (companyId && companyId.trim() !== '') {
       params.append('companyid', companyId);
     }
     
-    console.log(`Calling GymMaster API with week: ${formattedWeek}`);
+    console.log(`Calling GymMaster API with params: ${params.toString()}`);
     const response = await this.makeRequest(`/portal/api/v1/booking/classes/schedule?${params.toString()}`, {
       method: 'GET'
     });
     
     console.log("GymMaster API response:", JSON.stringify(response, null, 2));
+    
+    // Handle case where response.result might be undefined or null
+    if (!response.result || !Array.isArray(response.result)) {
+      console.log("No classes found or invalid response format");
+      return [];
+    }
     
     return response.result.map(classItem => ({
       classId: classItem.id,

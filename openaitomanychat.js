@@ -645,7 +645,21 @@ app.post("/make/webhook", async (req, res) => {
                     
                   case "get_schedule_public":
                     if (gymMaster) {
-                      const schedule = await gymMaster.getClassSchedule(functionArgs.date_from, functionArgs.branchId);
+                      // For get_schedule_public, we need to handle the parameters correctly
+                      // The assistant sends date_from, date_to, and branchId (optional)
+                      const date_from = functionArgs.date_from;
+                      const date_to = functionArgs.date_to;
+                      const branchId = functionArgs.branchId;
+                      
+                      // For GymMaster API, we typically just need a week parameter
+                      // If date_from is provided, use it as the week parameter
+                      // Otherwise, use today's date
+                      let weekParam = date_from;
+                      if (!weekParam) {
+                        weekParam = new Date().toISOString().split('T')[0];
+                      }
+                      
+                      const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
                       output = JSON.stringify(schedule);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
@@ -654,7 +668,21 @@ app.post("/make/webhook", async (req, res) => {
                     
                   case "get_schedule":
                     if (gymMaster) {
-                      const schedule = await gymMaster.getClassSchedule(functionArgs.date_from, functionArgs.branchId);
+                      // For get_schedule, we need to handle the parameters correctly
+                      // The assistant sends date_from, date_to, and branchId (optional)
+                      const date_from = functionArgs.date_from;
+                      const date_to = functionArgs.date_to;
+                      const branchId = functionArgs.branchId;
+                      
+                      // For GymMaster API, we typically just need a week parameter
+                      // If date_from is provided, use it as the week parameter
+                      // Otherwise, use today's date
+                      let weekParam = date_from;
+                      if (!weekParam) {
+                        weekParam = new Date().toISOString().split('T')[0];
+                      }
+                      
+                      const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
                       output = JSON.stringify(schedule);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
