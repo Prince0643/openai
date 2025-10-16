@@ -607,12 +607,153 @@ app.post("/make/webhook", async (req, res) => {
           assistant_id: "asst_xy382A6ksEJ9JwYfSyVDfSBp" // Your assistant ID from openaiassistant.json
         });
         
-        // Wait for completion with timeout
+        // Wait for completion with timeout and handle tool calls
         let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-        const maxWaitTime = 30000; // 30 seconds
+        const maxWaitTime = 60000; // 60 seconds
         const startTime = Date.now();
         
         while (runStatus.status !== "completed" && runStatus.status !== "failed" && (Date.now() - startTime) < maxWaitTime) {
+          // Handle tool calls if required
+          if (runStatus.status === "requires_action" && runStatus.required_action) {
+            console.log("Handling tool calls for run:", run.id);
+            
+            const toolCalls = runStatus.required_action.submit_tool_outputs.tool_calls;
+            const toolOutputs = [];
+            
+            for (const toolCall of toolCalls) {
+              const functionName = toolCall.function.name;
+              const functionArgs = JSON.parse(toolCall.function.arguments);
+              
+              console.log(`Calling tool: ${functionName}`, functionArgs);
+              
+              try {
+                let output;
+                switch (functionName) {
+                  case "member_login":
+                    if (gymMaster) {
+                      const result = await gymMaster.loginMember(functionArgs.email, functionArgs.password || "");
+                      output = JSON.stringify(result);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "find_or_create_member":
+                    // In a real implementation, you would use GymMaster APIs
+                    output = JSON.stringify({ memberId: "mem_" + Date.now() });
+                    break;
+                    
+                  case "get_schedule_public":
+                    if (gymMaster) {
+                      const schedule = await gymMaster.getClassSchedule(functionArgs.date_from, functionArgs.branchId);
+                      output = JSON.stringify(schedule);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "get_schedule":
+                    if (gymMaster) {
+                      const schedule = await gymMaster.getClassSchedule(functionArgs.date_from, functionArgs.branchId);
+                      output = JSON.stringify(schedule);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "get_class_seats":
+                    if (gymMaster) {
+                      const seats = await gymMaster.getClassSeats(functionArgs.classId);
+                      output = JSON.stringify(seats);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "book_class":
+                    if (gymMaster) {
+                      const booking = await gymMaster.bookClass(functionArgs.token, functionArgs.classId);
+                      output = JSON.stringify(booking);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "cancel_booking":
+                    if (gymMaster) {
+                      const cancellation = await gymMaster.cancelBooking(functionArgs.token, functionArgs.bookingId);
+                      output = JSON.stringify(cancellation);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "get_member_memberships":
+                    if (gymMaster) {
+                      const memberships = await gymMaster.getMemberMemberships(functionArgs.token);
+                      output = JSON.stringify(memberships);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "list_catalog":
+                    if (gymMaster) {
+                      const memberships = await gymMaster.listMemberships();
+                      const clubs = await gymMaster.listClubs();
+                      output = JSON.stringify({
+                        classes: [], // In a real implementation, you would fetch classes
+                        memberships: memberships
+                      });
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "save_lead":
+                    if (gymMaster) {
+                      const lead = await gymMaster.createProspect(
+                        functionArgs.name, 
+                        functionArgs.phone, 
+                        functionArgs.email, 
+                        functionArgs.interest
+                      );
+                      output = JSON.stringify(lead);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "handoff_to_staff":
+                    // In a real implementation, you would create a ticket in your support system
+                    output = JSON.stringify({ ticketId: "ticket_" + Date.now() });
+                    break;
+                    
+                  default:
+                    output = JSON.stringify({ error: true, message: `Unknown tool: ${functionName}` });
+                }
+                
+                toolOutputs.push({
+                  tool_call_id: toolCall.id,
+                  output: output
+                });
+              } catch (toolError) {
+                console.error(`Error calling tool ${functionName}:`, toolError);
+                toolOutputs.push({
+                  tool_call_id: toolCall.id,
+                  output: JSON.stringify({ error: true, message: toolError.message })
+                });
+              }
+            }
+            
+            // Submit tool outputs
+            console.log("Submitting tool outputs for run:", run.id);
+            await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
+              tool_outputs: toolOutputs
+            });
+          }
+          
+          // Wait before checking status again
           await new Promise(resolve => setTimeout(resolve, 1000));
           runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
         }
