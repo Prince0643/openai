@@ -11,15 +11,8 @@ const config = {
   GYMMASTER_BASE_URL: dotenvResult.parsed?.GYMASTER_BASE_URL || process.env.GYMMASTER_BASE_URL,
 };
 
-console.log("Testing OpenAI integration with tool calling...");
-
-async function testOpenAIWithTools() {
+async function testFinalResult() {
   try {
-    if (!config.OPENAI_API_KEY) {
-      console.error("Missing OPENAI_API_KEY");
-      process.exit(1);
-    }
-
     const openai = new OpenAI({
       apiKey: config.OPENAI_API_KEY
     });
@@ -28,45 +21,29 @@ async function testOpenAIWithTools() {
     let gymMaster = null;
     if (config.GYMMASTER_API_KEY && config.GYMMASTER_BASE_URL) {
       gymMaster = new GymMasterAPI(config.GYMMASTER_API_KEY, config.GYMMASTER_BASE_URL);
-      console.log("GymMaster API client initialized successfully");
-    } else {
-      console.log("GymMaster API client not initialized - missing configuration");
     }
     
-    console.log("OpenAI client initialized successfully");
-    
     // Create a thread
-    console.log("Creating thread...");
     const thread = await openai.beta.threads.create();
-    console.log("Thread created:", thread.id);
     
     // Add message to thread
-    console.log("Adding message to thread...");
-    const message = "show today's classes at Omni Kuta.";
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: message
+      content: "What classes are available today?"
     });
-    console.log("Message added");
     
     // Run the assistant
-    console.log("Running assistant...");
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: "asst_xy382A6ksEJ9JwYfSyVDfSBp"
     });
-    console.log("Assistant run started:", run.id);
     
-    // Wait for completion with timeout and handle tool calls
+    console.log("Assistant is processing your request...");
+    
+    // Wait for completion and handle tool calls
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    const maxWaitTime = 60000; // 60 seconds
-    const startTime = Date.now();
     
-    while (runStatus.status !== "completed" && runStatus.status !== "failed" && (Date.now() - startTime) < maxWaitTime) {
-      console.log("Run status:", runStatus.status);
-      
+    while (runStatus.status !== "completed" && runStatus.status !== "failed") {
       if (runStatus.status === "requires_action" && runStatus.required_action) {
-        console.log("Handling tool calls...");
-        
         const toolCalls = runStatus.required_action.submit_tool_outputs.tool_calls;
         const toolOutputs = [];
         
@@ -74,26 +51,12 @@ async function testOpenAIWithTools() {
           const functionName = toolCall.function.name;
           const functionArgs = JSON.parse(toolCall.function.arguments);
           
-          console.log(`Calling tool: ${functionName}`, functionArgs);
-          
           try {
             let output;
             switch (functionName) {
               case "get_schedule_public":
                 if (gymMaster) {
                   const today = new Date().toISOString().split('T')[0];
-                  console.log("Calling GymMaster getClassSchedule with:", today);
-                  const schedule = await gymMaster.getClassSchedule(today);
-                  output = JSON.stringify(schedule);
-                } else {
-                  output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                }
-                break;
-                
-              case "get_schedule":
-                if (gymMaster) {
-                  const today = new Date().toISOString().split('T')[0];
-                  console.log("Calling GymMaster getClassSchedule with:", today);
                   const schedule = await gymMaster.getClassSchedule(today);
                   output = JSON.stringify(schedule);
                 } else {
@@ -110,7 +73,6 @@ async function testOpenAIWithTools() {
               output: output
             });
           } catch (error) {
-            console.error(`Error calling tool ${functionName}:`, error);
             toolOutputs.push({
               tool_call_id: toolCall.id,
               output: JSON.stringify({ error: true, message: error.message })
@@ -119,7 +81,6 @@ async function testOpenAIWithTools() {
         }
         
         // Submit tool outputs
-        console.log("Submitting tool outputs...");
         await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
           tool_outputs: toolOutputs
         });
@@ -129,39 +90,19 @@ async function testOpenAIWithTools() {
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
     
-    if (runStatus.status === "failed") {
+    if (runStatus.status === "completed") {
+      // Get the response
+      const messages = await openai.beta.threads.messages.list(thread.id);
+      const latestMessage = messages.data[0];
+      
+      console.log("Assistant Response:");
+      console.log(latestMessage.content[0].text.value);
+    } else {
       console.error("Assistant run failed");
-      console.error("Error details:", runStatus);
-      process.exit(1);
     }
-    
-    if (runStatus.status !== "completed") {
-      console.error("Assistant run timed out");
-      process.exit(1);
-    }
-    
-    console.log("Assistant run completed successfully!");
-    
-    // Get the response
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const latestMessage = messages.data[0];
-    
-    // Extract text from the response
-    let responseText = "";
-    if (latestMessage.content && latestMessage.content.length > 0) {
-      responseText = latestMessage.content[0].text.value;
-    }
-    
-    console.log("Assistant Response:");
-    console.log(responseText);
-    
-    console.log("Test completed successfully!");
-    
   } catch (error) {
-    console.error("Test failed with error:", error);
-    console.error("Error stack:", error.stack);
-    process.exit(1);
+    console.error("Error:", error);
   }
 }
 
-testOpenAIWithTools();
+testFinalResult();
