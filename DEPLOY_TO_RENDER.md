@@ -116,7 +116,7 @@ For most chatbot applications, the free tier is sufficient.
    - **Root Directory**: Leave empty (root of repository)
    - **Environment**: Node
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Start Command**: `node openaitomanychat.js`
 6. Click "Advanced" and add your environment variables:
    - `BACKEND_API_KEY`: Your backend API key
    - `GYMASTER_API_KEY`: Your GymMaster API key

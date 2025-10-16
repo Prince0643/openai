@@ -33,6 +33,10 @@ For confirmation that GymMaster and OpenAI integrations are working, see [CONFIR
 
 For deployment to Render, see [DEPLOY_TO_RENDER.md](DEPLOY_TO_RENDER.md)
 
+For troubleshooting 404 errors, see [TROUBLESHOOT_404_ERROR.md](TROUBLESHOOT_404_ERROR.md)
+
+For troubleshooting Render 500 errors, see [TROUBLESHOOT_RENDER_500_ERROR.md](TROUBLESHOOT_RENDER_500_ERROR.md)
+
 For OpenAI Assistant configuration, see [ASSISTANT_CONFIGURATION.md](ASSISTANT_CONFIGURATION.md) and [ASSISTANT_SETUP_SUMMARY.md](ASSISTANT_SETUP_SUMMARY.md)
 
 ## System Status

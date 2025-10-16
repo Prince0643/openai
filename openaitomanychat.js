@@ -17,7 +17,14 @@ const config = {
 };
 
 const app = express();
-app.use(express.json());
+// Add proper JSON parsing with character encoding handling
+app.use(express.json({ 
+  limit: '10mb',
+  type: 'application/json'
+}));
+
+// Add URL encoding middleware
+app.use(express.urlencoded({ extended: true }));
 
 // Add CORS headers for Make.com integration
 app.use((req, res, next) => {
