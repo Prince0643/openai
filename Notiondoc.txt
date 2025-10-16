@@ -1,0 +1,67 @@
+## SYSTEM OVERVIEW: OMNI CHAT AUTOMATION FLOW
+
+### 1. **User Initiates Chat** (via Instagram)
+
+- Bot greets the user with a welcome message
+- Determines intent by asking:
+    - Are they looking to book a class?
+    - Are they inquiring about memberships?
+    - Do they want to speak with someone?
+    - Other common FAQs (e.g. location, schedule, prices)
+
+### 2. **If Class Booking**
+
+- Bot asks what type of class they’re interested in
+    
+    (e.g. strength, conditioning, yoga, etc.)
+    
+- Presents available times pulled from **GymMaster**
+    - Uses GymMaster API
+    - Checks class availability and capacity
+- Sends a direct booking link or asks for details to complete booking
+- Once booked, bot sends:
+    - Confirmation message
+    - Link to GymMaster app if needed
+    - Reminder 30 minutes before class (via Manychat)
+
+### 3. **If Membership Inquiry**
+
+- Bot explains available memberships
+    - Info sourced from the membership PDF or API
+- Shares prices, package details, what’s included
+- Can direct user to purchase link or request follow-up by staff
+
+### 4. **If FAQ / General Inquiry**
+
+- Bot checks against trained responses from the FAQ list
+- If unable to answer:
+    - Logs the question in a shared Google Sheet
+    - Optionally escalates to human (Manychat operator)
+
+### 5. **If PT Session Request**
+
+- Bot collects user goals, preferred time, and trainer (if needed)
+- Sends to Omni team for manual assignment and follow-up
+
+### 6. **Post-Class Follow-up**
+
+- After a class (time-based or via webhook), bot sends:
+    - Feedback request: "How was your class?"
+    - If positive: prompts for Google/IG review
+    - If negative: flags to team and offers human follow-up
+
+### 7. **Lead Capture + Logging**
+
+- All user info (name, phone, interest, etc.) is logged in:
+    - Google Sheet (lead tracker) - ask: **We saw GymMaster also has a sales funnel to track lead management and outreach. Is it easier/possible to link everything on GymMaster (follow-up dates, status, etc) and keep the google sheet purely unanswered questions?**
+    - GymMaster
+- Sheet also tracks:
+    - Unanswered questions
+    - Follow-up dates
+    - Status (cold/warm/converted)
+
+### 8. **Broadcasts / Announcements**
+
+- You’ll be able to send IG broadcasts via Manychat
+    - Only to opted-in users per Meta rules
+    - Example: class changes, promos, events

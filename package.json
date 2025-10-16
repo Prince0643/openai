@@ -1,0 +1,30 @@
+{
+  "name": "openaitomanychat",
+  "version": "1.0.0",
+  "description": "OpenAI to ManyChat integration with GymMaster API",
+  "main": "openaitomanychat.js",
+  "type": "module",
+  "scripts": {
+    "start": "node openaitomanychat.js",
+    "dev": "nodemon openaitomanychat.js",
+    "test": "node test-gymmaster.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "openai",
+    "manychat",
+    "gymmaster",
+    "chatbot",
+    "automation"
+  ],
+  "author": "Omni Gym",
+  "license": "ISC"
+}
