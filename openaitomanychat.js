@@ -623,7 +623,23 @@ app.post("/make/webhook", async (req, res) => {
   try {
     console.log("Received webhook from Make.com:", req.body);
     
-    const { message, userId, threadId } = req.body;
+    let message, userId, threadId, platform;
+    
+    // Handle different payload formats
+    if (Array.isArray(req.body) && req.body.length > 0) {
+      // Wati format - array of messages
+      const watiMessage = req.body[0];
+      message = watiMessage.text;
+      userId = watiMessage.waId; // WhatsApp ID
+      platform = "wati";
+      threadId = null; // Wati doesn't provide threadId
+    } else {
+      // ManyChat format - object
+      message = req.body.message;
+      userId = req.body.userId;
+      threadId = req.body.threadId;
+      platform = req.body.platform || "manychat";
+    }
     
     if (!message) {
       return res.status(400).json({ error: true, message: "Message is required" });
@@ -913,7 +929,8 @@ app.post("/make/webhook", async (req, res) => {
             success: true,
             escalated: refundInquiryResult.escalated,
             ticketId: refundInquiryResult.ticketId,
-            violationType: refundInquiryResult.violationType
+            violationType: refundInquiryResult.violationType,
+            platform: platform
           });
         }
         
@@ -930,7 +947,8 @@ app.post("/make/webhook", async (req, res) => {
             success: true,
             escalated: refundResult.escalated,
             ticketId: refundResult.ticketId,
-            violationType: refundResult.violationType
+            violationType: refundResult.violationType,
+            platform: platform
           });
         }
         
@@ -941,7 +959,8 @@ app.post("/make/webhook", async (req, res) => {
           userId: userId,
           success: true,
           escalated: fallbackResult.escalated,
-          ticketId: fallbackResult.ticketId
+          ticketId: fallbackResult.ticketId,
+          platform: platform
         });
       } catch (openaiError) {
         console.error("OpenAI processing error:", openaiError);
@@ -949,7 +968,8 @@ app.post("/make/webhook", async (req, res) => {
         return res.json({
           response: "I received your message. I'm currently unable to process it with AI assistance, but I'll get back to you soon.",
           userId: userId,
-          success: true
+          success: true,
+          platform: platform
         });
       }
     } else {
@@ -957,7 +977,8 @@ app.post("/make/webhook", async (req, res) => {
       return res.json({
         response: `Echo: ${message}`,
         userId: userId,
-        success: true
+        success: true,
+        platform: platform
       });
     }
   } catch (e) {
