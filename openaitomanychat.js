@@ -4,6 +4,23 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import GymMasterAPI from "./gymmaster.js";
 import { getUserThread, setUserThread } from "./threadStorage.js";
+import { 
+  addTemplate, 
+  approveTemplate, 
+  isTemplateApproved, 
+  optInUser, 
+  optOutUser, 
+  isUserOptedIn, 
+  getOptedInUsers, 
+  sendBroadcast 
+} from "./broadcastManager.js";
+import { createTicket } from "./staffHandoffManager.js";
+import { handleFallback, handleToolError } from "./fallbackManager.js";
+import { 
+  handleRefundsGuardrail, 
+  isAskingAboutRefunds, 
+  handleRefundInquiry 
+} from "./refundsGuardrail.js";
 
 // Load environment variables
 const dotenvResult = dotenv.config();
@@ -11,8 +28,8 @@ const dotenvResult = dotenv.config();
 // Use parsed variables directly to avoid environment variable issues
 const config = {
   BACKEND_API_KEY: dotenvResult.parsed?.BACKEND_API_KEY || process.env.BACKEND_API_KEY,
-  GYMMASTER_API_KEY: dotenvResult.parsed?.GYMASTER_API_KEY || process.env.GYMMASTER_API_KEY,
-  GYMMASTER_BASE_URL: dotenvResult.parsed?.GYMASTER_BASE_URL || process.env.GYMMASTER_BASE_URL,
+  GYMMASTER_API_KEY: dotenvResult.parsed?.GYMMASTER_API_KEY || process.env.GYMMASTER_API_KEY,
+  GYMMASTER_BASE_URL: dotenvResult.parsed?.GYMMASTER_BASE_URL || process.env.GYMMASTER_BASE_URL,
   OPENAI_API_KEY: dotenvResult.parsed?.OPENAI_API_KEY || process.env.OPENAI_API_KEY,
   PORT: parseInt(dotenvResult.parsed?.PORT || process.env.PORT) || 8080
 };
@@ -484,13 +501,22 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
-          console.log("Calling GymMaster bookClass with:", tool_args.token, tool_args.classId);
-          const booking = await gymMaster.bookClass(tool_args.token, tool_args.classId);
-          console.log("GymMaster response:", JSON.stringify(booking, null, 2));
-          return res.json(booking);
+          // Instead of actually booking, provide a booking link
+          const { classId } = tool_args;
+          // Generate a booking link - using your GymMaster portal URL
+          const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class/?classId=${classId}`;
+          
+          // Return a response that includes the booking link
+          const bookingResponse = {
+            message: "Please use the link below to complete your booking:",
+            bookingLink: bookingLink,
+            classId: classId
+          };
+          
+          return res.json(bookingResponse);
         } catch (e) {
-          console.error("GymMaster API error:", e);
-          return res.status(500).json({ error: true, message: "Cannot book class: " + e.message });
+          console.error("Error generating booking link:", e);
+          return res.status(500).json({ error: true, message: "Cannot generate booking link: " + e.message });
         }
         
       case "cancel_booking":
@@ -560,8 +586,28 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         }
         
       case "handoff_to_staff":
-        // In a real implementation, you would create a ticket in your support system
-        return res.json({ ticketId: "ticket_" + Date.now() });
+        // Create a proper ticket in the support system with conversation context
+        try {
+          const ticket = createTicket({
+            userId: userId,
+            message: "Assistant requested staff handoff",
+            contactInfo: { email: "not_provided", phone: "not_provided" },
+            category: "ai_assistant_handoff",
+            threadId: thread.id
+          });
+          
+          output = JSON.stringify({ 
+            ticketId: ticket.ticketId,
+            message: "I've alerted our staff and created a ticket for you. Someone will reach out shortly."
+          });
+        } catch (error) {
+          console.error("Error creating staff ticket:", error);
+          output = JSON.stringify({ 
+            error: true, 
+            message: "Failed to create staff ticket: " + error.message 
+          });
+        }
+        break;
         
       default:
         return res.status(400).json({ error: true, message: "Unknown tool: " + tool_name });
@@ -729,8 +775,23 @@ app.post("/make/webhook", async (req, res) => {
                     
                   case "book_class":
                     if (gymMaster) {
-                      const booking = await gymMaster.bookClass(functionArgs.token, functionArgs.classId);
-                      output = JSON.stringify(booking);
+                      try {
+                        const { classId } = functionArgs;
+                        // Generate a booking link - using your GymMaster portal URL
+                        const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class/?classId=${classId}`;
+                        
+                        // Return a response that includes the booking link
+                        const bookingResponse = {
+                          message: "Please use the link below to complete your booking:",
+                          bookingLink: bookingLink,
+                          classId: classId
+                        };
+                        
+                        output = JSON.stringify(bookingResponse);
+                      } catch (e) {
+                        console.error("Error generating booking link:", e);
+                        output = JSON.stringify({ error: true, message: "Cannot generate booking link: " + e.message });
+                      }
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
@@ -796,9 +857,18 @@ app.post("/make/webhook", async (req, res) => {
                 });
               } catch (toolError) {
                 console.error(`Error calling tool ${functionName}:`, toolError);
+                
+                // Use fallback manager for tool errors
+                const fallbackResult = handleToolError(userId, message, toolError.message, thread.id);
+                
                 toolOutputs.push({
                   tool_call_id: toolCall.id,
-                  output: JSON.stringify({ error: true, message: toolError.message })
+                  output: JSON.stringify({ 
+                    error: true, 
+                    message: fallbackResult.response,
+                    escalated: fallbackResult.escalated,
+                    ticketId: fallbackResult.ticketId
+                  })
                 });
               }
             }
@@ -833,12 +903,45 @@ app.post("/make/webhook", async (req, res) => {
           responseText = latestMessage.content[0].text.value;
         }
         
-        // Return response that Make.com can use to send back to ManyChat
+        // Apply refund guardrail first - escalate if user is asking about refunds/credits/freebies
+        if (isAskingAboutRefunds(message)) {
+          const refundInquiryResult = handleRefundInquiry(userId, message, thread.id);
+          return res.json({
+            response: refundInquiryResult.response,
+            threadId: thread.id,
+            userId: userId,
+            success: true,
+            escalated: refundInquiryResult.escalated,
+            ticketId: refundInquiryResult.ticketId,
+            violationType: refundInquiryResult.violationType
+          });
+        }
+        
+        // Apply fallback and escalation logic
+        const fallbackResult = handleFallback(userId, message, responseText, thread.id);
+        
+        // If fallback didn't escalate, apply refund guardrail to check for prohibited promises
+        if (!fallbackResult.escalated) {
+          const refundResult = handleRefundsGuardrail(userId, message, fallbackResult.response, thread.id);
+          return res.json({
+            response: refundResult.response,
+            threadId: thread.id,
+            userId: userId,
+            success: true,
+            escalated: refundResult.escalated,
+            ticketId: refundResult.ticketId,
+            violationType: refundResult.violationType
+          });
+        }
+        
+        // If fallback already escalated, return that result
         return res.json({
-          response: responseText,
+          response: fallbackResult.response,
           threadId: thread.id,
           userId: userId,
-          success: true
+          success: true,
+          escalated: fallbackResult.escalated,
+          ticketId: fallbackResult.ticketId
         });
       } catch (openaiError) {
         console.error("OpenAI processing error:", openaiError);
@@ -860,6 +963,132 @@ app.post("/make/webhook", async (req, res) => {
   } catch (e) {
     console.error("Error processing Make.com webhook:", e);
     return res.status(500).json({ error: true, message: "Failed to process webhook: " + e.message });
+  }
+});
+
+// Broadcast endpoints for compliant messaging
+// Add a new broadcast template
+app.post("/broadcast/template", requireBackendKey, async (req, res) => {
+  try {
+    const { templateId, content, preApproved } = req.body;
+    
+    if (!templateId || !content) {
+      return res.status(400).json({ error: true, message: "templateId and content are required" });
+    }
+    
+    addTemplate(templateId, content, preApproved);
+    
+    return res.json({ 
+      success: true, 
+      message: `Template ${templateId} added successfully`,
+      preApproved: preApproved || false
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to add template: " + e.message });
+  }
+});
+
+// Approve a broadcast template
+app.post("/broadcast/approve", requireBackendKey, async (req, res) => {
+  try {
+    const { templateId } = req.body;
+    
+    if (!templateId) {
+      return res.status(400).json({ error: true, message: "templateId is required" });
+    }
+    
+    approveTemplate(templateId);
+    
+    return res.json({ 
+      success: true, 
+      message: `Template ${templateId} approved successfully`
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to approve template: " + e.message });
+  }
+});
+
+// Opt-in a user for broadcasts
+app.post("/broadcast/opt-in", async (req, res) => {
+  try {
+    const { userId, contactInfo } = req.body;
+    
+    if (!userId || !contactInfo) {
+      return res.status(400).json({ error: true, message: "userId and contactInfo are required" });
+    }
+    
+    optInUser(userId, contactInfo);
+    
+    return res.json({ 
+      success: true, 
+      message: `User ${userId} opted in successfully`
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to opt in user: " + e.message });
+  }
+});
+
+// Opt-out a user from broadcasts
+app.post("/broadcast/opt-out", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: true, message: "userId is required" });
+    }
+    
+    optOutUser(userId);
+    
+    return res.json({ 
+      success: true, 
+      message: `User ${userId} opted out successfully`
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to opt out user: " + e.message });
+  }
+});
+
+// Send a broadcast to opted-in users
+app.post("/broadcast/send", requireBackendKey, async (req, res) => {
+  try {
+    const { templateId, testUserIds } = req.body;
+    
+    if (!templateId) {
+      return res.status(400).json({ error: true, message: "templateId is required" });
+    }
+    
+    // If testUserIds is provided, this is a test broadcast
+    const isTest = testUserIds && Array.isArray(testUserIds);
+    
+    const result = sendBroadcast(templateId, testUserIds);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: true, message: result.error });
+    }
+    
+    return res.json({ 
+      success: true, 
+      message: result.message,
+      recipients: result.recipients,
+      isTest: isTest
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to send broadcast: " + e.message });
+  }
+});
+
+// Get broadcast status
+app.get("/broadcast/status", requireBackendKey, async (req, res) => {
+  try {
+    const optedInCount = getOptedInUsers().length;
+    
+    return res.json({ 
+      success: true, 
+      optedInUsers: optedInCount,
+      message: `${optedInCount} users are opted in for broadcasts`
+    });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Failed to get broadcast status: " + e.message });
   }
 });
 

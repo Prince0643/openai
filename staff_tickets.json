@@ -1,0 +1,171 @@
+{
+  "tickets": {
+    "TICKET-0001": {
+      "ticketId": "TICKET-0001",
+      "userId": "user_001",
+      "message": "I lost my water bottle at the gym yesterday around 6 PM",
+      "contactInfo": {
+        "email": "user1@example.com",
+        "phone": "+1234567890"
+      },
+      "category": "lost_and_found",
+      "threadId": "thread_123",
+      "createdAt": "2025-10-29T01:37:57.736Z",
+      "status": "open",
+      "assignedTo": "staff_member_001",
+      "resolvedAt": null,
+      "assignedAt": "2025-10-29T01:37:57.745Z"
+    },
+    "TICKET-0002": {
+      "ticketId": "TICKET-0002",
+      "userId": "user_002",
+      "message": "The air conditioning in the main workout area isn't working",
+      "contactInfo": {
+        "email": "user2@example.com",
+        "phone": "+1234567891"
+      },
+      "category": "complaint",
+      "threadId": "thread_456",
+      "createdAt": "2025-10-29T01:37:57.740Z",
+      "status": "resolved",
+      "assignedTo": null,
+      "resolvedAt": "2025-10-29T01:37:57.746Z"
+    },
+    "TICKET-0003": {
+      "ticketId": "TICKET-0003",
+      "userId": "user_003",
+      "message": "I'm not sure which membership plan is right for me",
+      "contactInfo": {
+        "email": "user3@example.com",
+        "phone": "+1234567892"
+      },
+      "category": "unclear_request",
+      "threadId": "thread_789",
+      "createdAt": "2025-10-29T01:37:57.742Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0004": {
+      "ticketId": "TICKET-0004",
+      "userId": "user_001",
+      "message": "asdf123",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_123",
+      "createdAt": "2025-10-29T01:44:01.502Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0005": {
+      "ticketId": "TICKET-0005",
+      "userId": "user_002",
+      "message": "What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_456",
+      "createdAt": "2025-10-29T01:44:01.505Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0006": {
+      "ticketId": "TICKET-0006",
+      "userId": "user_001",
+      "message": "asdf",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_123",
+      "createdAt": "2025-10-29T01:47:07.819Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0007": {
+      "ticketId": "TICKET-0007",
+      "userId": "user_002",
+      "message": "What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_456",
+      "createdAt": "2025-10-29T01:47:07.824Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0008": {
+      "ticketId": "TICKET-0008",
+      "userId": "user123",
+      "message": "asdf123",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "nonsense_query",
+      "threadId": "thread123",
+      "createdAt": "2025-10-29T01:49:08.801Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0009": {
+      "ticketId": "TICKET-0009",
+      "userId": "user456",
+      "message": "What is your policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread456",
+      "createdAt": "2025-10-29T01:49:08.804Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0010": {
+      "ticketId": "TICKET-0010",
+      "userId": "user_001",
+      "message": "Refund/credit inquiry: Can I get a refund?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_123",
+      "createdAt": "2025-10-29T01:53:32.703Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0011": {
+      "ticketId": "TICKET-0011",
+      "userId": "user_002",
+      "message": "Prohibited promise detected: I want a refund",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_violation",
+      "threadId": "thread_456",
+      "createdAt": "2025-10-29T01:53:32.710Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    }
+  },
+  "nextTicketId": 12
+}
