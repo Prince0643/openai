@@ -621,7 +621,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
 // New endpoint: Receive data from Make.com and process it
 app.post("/make/webhook", async (req, res) => {
   try {
-    console.log("Received webhook from Make.com:", req.body);
+    console.log("Received webhook from Make.com:", JSON.stringify(req.body, null, 2));
     
     let message, userId, threadId, platform;
     
@@ -629,19 +629,42 @@ app.post("/make/webhook", async (req, res) => {
     if (Array.isArray(req.body) && req.body.length > 0) {
       // Wati format - array of messages
       const watiMessage = req.body[0];
-      message = watiMessage.text;
-      userId = watiMessage.waId; // WhatsApp ID
+      message = watiMessage.text || "";
+      userId = watiMessage.waId || ""; // WhatsApp ID
       platform = "wati";
-      threadId = null; // Wati doesn't provide threadId
-    } else {
+      threadId = watiMessage.conversationId || null; // Use conversationId if available
+    } else if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
       // ManyChat format - object
-      message = req.body.message;
-      userId = req.body.userId;
-      threadId = req.body.threadId;
+      message = req.body.message || "";
+      userId = req.body.userId || "";
+      threadId = req.body.threadId || null;
       platform = req.body.platform || "manychat";
+    } else {
+      // Fallback - try to extract from any object structure
+      message = "";
+      userId = "";
+      threadId = null;
+      platform = "unknown";
+      
+      // Try to find message and userId in the body
+      if (req.body && typeof req.body === 'object') {
+        // Look for common message fields
+        message = req.body.text || req.body.message || req.body.content || "";
+        // Look for common user ID fields
+        userId = req.body.waId || req.body.userId || req.body.senderId || req.body.from || "";
+        
+        // Determine platform based on fields present
+        if (req.body.waId) {
+          platform = "wati";
+        } else if (req.body.userId) {
+          platform = req.body.platform || "manychat";
+        }
+      }
     }
     
-    if (!message) {
+    console.log(`Parsed payload - Message: "${message}", UserId: "${userId}", Platform: "${platform}"`);
+    
+    if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
     }
     
