@@ -3,6 +3,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 import GymMasterAPI from "./gymmaster.js";
+import { getUserThread, setUserThread } from "./threadStorage.js";
 
 // Load environment variables
 const dotenvResult = dotenv.config();
@@ -587,13 +588,25 @@ app.post("/make/webhook", async (req, res) => {
       try {
         let thread;
         
-        // Create or retrieve thread
-        if (threadId) {
-          // Retrieve existing thread
-          thread = await openai.beta.threads.retrieve(threadId);
-        } else {
-          // Create new thread
+        // Check if we have a stored thread ID for this user
+        let storedThreadId = getUserThread(userId);
+        
+        // If we have a stored thread ID, try to retrieve it
+        if (storedThreadId) {
+          try {
+            thread = await openai.beta.threads.retrieve(storedThreadId);
+            console.log(`Retrieved existing thread for user ${userId}: ${storedThreadId}`);
+          } catch (retrieveError) {
+            console.log(`Failed to retrieve stored thread ${storedThreadId}, creating new one`);
+            storedThreadId = null;
+          }
+        }
+        
+        // If we don't have a stored thread ID or failed to retrieve it, create a new one
+        if (!storedThreadId) {
           thread = await openai.beta.threads.create();
+          setUserThread(userId, thread.id);
+          console.log(`Created new thread for user ${userId}: ${thread.id}`);
         }
         
         // Add message to thread
