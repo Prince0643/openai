@@ -820,7 +820,7 @@ app.post("/make/webhook", async (req, res) => {
                       const formattedSchedule = {
                         classes: schedule.classes || [],
                         message: "Here are the available classes:",
-                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class"
                       };
                       
                       output = JSON.stringify(formattedSchedule);
