@@ -83,7 +83,29 @@ function createTicket(ticketData) {
   console.log(`Contact: ${JSON.stringify(ticket.contactInfo)}`);
   console.log(`========================`);
   
-  return ticket;
+  // Provide category-specific responses
+  let responseMessage = "I've alerted our staff and created a ticket for you. Someone will reach out shortly.";
+  
+  switch (ticket.category) {
+    case "lost_and_found":
+      responseMessage = "Sorry about that. Please tell me the item, date, and branch; I'll alert the front desk now.";
+      break;
+    case "complaint":
+      responseMessage = "I'm sorry to hear about your concern. I've passed this to our team who will address it shortly.";
+      break;
+    case "refund_inquiry":
+      responseMessage = "I don't want to give you the wrong info. I've passed this to our team who will reply shortly.";
+      break;
+    case "nonsense_query":
+    case "low_confidence":
+      responseMessage = "I don't want to give you the wrong info. I've passed this to our team who will reply shortly.";
+      break;
+  }
+  
+  return {
+    ...ticket,
+    responseMessage: responseMessage
+  };
 }
 
 /**

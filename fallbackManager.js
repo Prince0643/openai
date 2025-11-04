@@ -163,9 +163,21 @@ function handleFallback(userId, message, responseText, threadId) {
     };
   }
   
+  // Format the response according to the new instructions:
+  // - Plain text only
+  // - Maximum of five short lines
+  // - Real line breaks for spacing
+  let formattedResponse = responseText;
+  
+  // If the response is too long, try to shorten it
+  if (formattedResponse.split('\n').length > 5) {
+    const lines = formattedResponse.split('\n');
+    formattedResponse = lines.slice(0, 5).join('\n');
+  }
+  
   // If we get here, the response seems reasonable
   return {
-    response: responseText,
+    response: formattedResponse,
     escalated: false
   };
 }

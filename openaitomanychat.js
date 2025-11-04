@@ -459,9 +459,21 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         }
         try {
           console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
-          const schedule = await gymMaster.getClassSchedule(tool_args.date_from, tool_args.branchId);
+          
+          // Use date_from or default to current date
+          const week = tool_args.date_from || new Date().toISOString().split('T')[0];
+          
+          const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
           console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
-          return res.json(schedule);
+          
+          // Format the schedule data according to the new instructions
+          const formattedSchedule = {
+            classes: schedule.classes || [],
+            message: "Here are the available classes:",
+            bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+          };
+          
+          return res.json(formattedSchedule);
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
@@ -474,9 +486,21 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         }
         try {
           console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
-          const schedule = await gymMaster.getClassSchedule(tool_args.date_from, tool_args.branchId);
+          
+          // Use date_from or default to current date
+          const week = tool_args.date_from || new Date().toISOString().split('T')[0];
+          
+          const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
           console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
-          return res.json(schedule);
+          
+          // Format the schedule data according to the new instructions
+          const formattedSchedule = {
+            classes: schedule.classes || [],
+            message: "Here are the available classes:",
+            bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+          };
+          
+          return res.json(formattedSchedule);
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
@@ -557,10 +581,16 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           console.log("GymMaster listMemberships response:", JSON.stringify(memberships, null, 2));
           const clubs = await gymMaster.listClubs();
           console.log("GymMaster listClubs response:", JSON.stringify(clubs, null, 2));
-          return res.json({
-            classes: [], // In a real implementation, you would fetch classes
-            memberships: memberships
-          });
+          
+          // Format the catalog data according to the new instructions
+          const formattedCatalog = {
+            memberships: memberships,
+            clubs: clubs,
+            message: "Here are our membership options:",
+            bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+          };
+          
+          return res.json(formattedCatalog);
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot list catalog: " + e.message });
@@ -579,7 +609,15 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
             tool_args.interest
           );
           console.log("GymMaster response:", JSON.stringify(lead, null, 2));
-          return res.json(lead);
+          
+          // Format the lead response according to the new instructions
+          const formattedLead = {
+            success: true,
+            message: "Thank you for your interest! Our team will contact you shortly.",
+            leadId: lead.id || "lead_" + Date.now()
+          };
+          
+          return res.json(formattedLead);
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot save lead: " + e.message });
@@ -588,26 +626,37 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
       case "handoff_to_staff":
         // Create a proper ticket in the support system with conversation context
         try {
+          // Determine the category based on the message content
+          let category = "unclear_request";
+          if (tool_args.message && tool_args.message.toLowerCase().includes("lost")) {
+            category = "lost_and_found";
+          } else if (tool_args.message && tool_args.message.toLowerCase().includes("complaint")) {
+            category = "complaint";
+          } else if (tool_args.message && tool_args.message.toLowerCase().includes("refund")) {
+            category = "refund_inquiry";
+          }
+          
           const ticket = createTicket({
-            userId: userId,
-            message: "Assistant requested staff handoff",
-            contactInfo: { email: "not_provided", phone: "not_provided" },
-            category: "ai_assistant_handoff",
-            threadId: thread.id
+            userId: tool_args.userId || "unknown_user",
+            message: tool_args.message || "Assistant requested staff handoff",
+            contactInfo: tool_args.contactInfo || { email: "not_provided", phone: "not_provided" },
+            category: category,
+            threadId: tool_args.threadId || null
           });
           
-          output = JSON.stringify({ 
+          const output = {
             ticketId: ticket.ticketId,
             message: "I've alerted our staff and created a ticket for you. Someone will reach out shortly."
-          });
+          };
+          
+          return res.json(output);
         } catch (error) {
           console.error("Error creating staff ticket:", error);
-          output = JSON.stringify({ 
+          return res.status(500).json({ 
             error: true, 
             message: "Failed to create staff ticket: " + error.message 
           });
         }
-        break;
         
       default:
         return res.status(400).json({ error: true, message: "Unknown tool: " + tool_name });
@@ -766,7 +815,15 @@ app.post("/make/webhook", async (req, res) => {
                       }
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
-                      output = JSON.stringify(schedule);
+                      
+                      // Format the schedule data according to the new instructions
+                      const formattedSchedule = {
+                        classes: schedule.classes || [],
+                        message: "Here are the available classes:",
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                      };
+                      
+                      output = JSON.stringify(formattedSchedule);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
@@ -797,7 +854,15 @@ app.post("/make/webhook", async (req, res) => {
                       }
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
-                      output = JSON.stringify(schedule);
+                      
+                      // Format the schedule data according to the new instructions
+                      const formattedSchedule = {
+                        classes: schedule.classes || [],
+                        message: "Here are the available classes:",
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                      };
+                      
+                      output = JSON.stringify(formattedSchedule);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
@@ -858,10 +923,16 @@ app.post("/make/webhook", async (req, res) => {
                     if (gymMaster) {
                       const memberships = await gymMaster.listMemberships();
                       const clubs = await gymMaster.listClubs();
-                      output = JSON.stringify({
-                        classes: [], // In a real implementation, you would fetch classes
-                        memberships: memberships
-                      });
+                      
+                      // Format the catalog data according to the new instructions
+                      const formattedCatalog = {
+                        memberships: memberships,
+                        clubs: clubs,
+                        message: "Here are our membership options:",
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                      };
+                      
+                      output = JSON.stringify(formattedCatalog);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
@@ -875,15 +946,54 @@ app.post("/make/webhook", async (req, res) => {
                         functionArgs.email, 
                         functionArgs.interest
                       );
-                      output = JSON.stringify(lead);
+                      
+                      // Format the lead response according to the new instructions
+                      const formattedLead = {
+                        success: true,
+                        message: "Thank you for your interest! Our team will contact you shortly.",
+                        leadId: lead.id || "lead_" + Date.now()
+                      };
+                      
+                      output = JSON.stringify(formattedLead);
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
                     
                   case "handoff_to_staff":
-                    // In a real implementation, you would create a ticket in your support system
-                    output = JSON.stringify({ ticketId: "ticket_" + Date.now() });
+                    // Create a proper ticket in the support system with conversation context
+                    try {
+                      // Determine the category based on the message content
+                      let category = "unclear_request";
+                      if (functionArgs.message && functionArgs.message.toLowerCase().includes("lost")) {
+                        category = "lost_and_found";
+                      } else if (functionArgs.message && functionArgs.message.toLowerCase().includes("complaint")) {
+                        category = "complaint";
+                      } else if (functionArgs.message && functionArgs.message.toLowerCase().includes("refund")) {
+                        category = "refund_inquiry";
+                      }
+                      
+                      const ticket = createTicket({
+                        userId: functionArgs.userId || "unknown_user",
+                        message: functionArgs.message || "Assistant requested staff handoff",
+                        contactInfo: functionArgs.contactInfo || { email: "not_provided", phone: "not_provided" },
+                        category: category,
+                        threadId: functionArgs.threadId || null
+                      });
+                      
+                      const staffResponse = {
+                        ticketId: ticket.ticketId,
+                        message: "I've alerted our staff and created a ticket for you. Someone will reach out shortly."
+                      };
+                      
+                      output = JSON.stringify(staffResponse);
+                    } catch (error) {
+                      console.error("Error creating staff ticket:", error);
+                      output = JSON.stringify({ 
+                        error: true, 
+                        message: "Failed to create staff ticket: " + error.message 
+                      });
+                    }
                     break;
                     
                   default:
