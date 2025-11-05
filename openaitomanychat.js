@@ -468,7 +468,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           
           // Format the schedule data according to the new instructions
           const formattedSchedule = {
-            classes: schedule.classes || [],
+            classes: schedule, // Fix: schedule is already an array, not schedule.classes
             message: "Here are the available classes:",
             bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
           };
@@ -495,7 +495,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           
           // Format the schedule data according to the new instructions
           const formattedSchedule = {
-            classes: schedule.classes || [],
+            classes: schedule, // Fix: schedule is already an array, not schedule.classes
             message: "Here are the available classes:",
             bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
           };
@@ -818,7 +818,7 @@ app.post("/make/webhook", async (req, res) => {
                       
                       // Format the schedule data according to the new instructions
                       const formattedSchedule = {
-                        classes: schedule.classes || [],
+                        classes: schedule, // Fix: schedule is already an array, not schedule.classes
                         message: "Here are the available classes:",
                         bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/schedule"
                       };
@@ -857,7 +857,7 @@ app.post("/make/webhook", async (req, res) => {
                       
                       // Format the schedule data according to the new instructions
                       const formattedSchedule = {
-                        classes: schedule.classes || [],
+                        classes: schedule, // Fix: schedule is already an array, not schedule.classes
                         message: "Here are the available classes:",
                         bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
                       };
