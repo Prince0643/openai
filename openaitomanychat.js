@@ -466,9 +466,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
           console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
           
+          // Apply daily view logic (next 5 classes only for today)
+          const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
+          
           // Format the schedule data according to the new instructions
           const formattedSchedule = {
-            classes: schedule, // Fix: schedule is already an array, not schedule.classes
+            classes: filteredSchedule,
             message: "Here are the available classes:",
             bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
           };
@@ -493,9 +496,12 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
           console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
           
+          // Apply daily view logic (next 5 classes only for today)
+          const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
+          
           // Format the schedule data according to the new instructions
           const formattedSchedule = {
-            classes: schedule, // Fix: schedule is already an array, not schedule.classes
+            classes: filteredSchedule,
             message: "Here are the available classes:",
             bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
           };
@@ -628,17 +634,20 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         try {
           // Determine the category based on the message content
           let category = "unclear_request";
-          if (tool_args.message && tool_args.message.toLowerCase().includes("lost")) {
+          const messageContent = tool_args.message || "";
+          const lowerMessage = messageContent.toLowerCase();
+          
+          if (lowerMessage.includes("lost")) {
             category = "lost_and_found";
-          } else if (tool_args.message && tool_args.message.toLowerCase().includes("complaint")) {
+          } else if (lowerMessage.includes("complaint")) {
             category = "complaint";
-          } else if (tool_args.message && tool_args.message.toLowerCase().includes("refund")) {
+          } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
             category = "refund_inquiry";
           }
           
           const ticket = createTicket({
             userId: tool_args.userId || "unknown_user",
-            message: tool_args.message || "Assistant requested staff handoff",
+            message: messageContent || "Assistant requested staff handoff",
             contactInfo: tool_args.contactInfo || { email: "not_provided", phone: "not_provided" },
             category: category,
             threadId: tool_args.threadId || null
@@ -801,7 +810,7 @@ app.post("/make/webhook", async (req, res) => {
                       // Validate the date - if it's too old, use today's date instead
                       let weekParam = date_from;
                       const today = new Date();
-                      const requestedDate = new Date(date_from);
+                      const requestedDate = date_from ? new Date(date_from) : today;
                       
                       // If the requested date is more than a few days in the past, use today
                       if (requestedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)) {
@@ -816,9 +825,12 @@ app.post("/make/webhook", async (req, res) => {
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
                       
+                      // Apply daily view logic (next 5 classes only for today)
+                      const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
+                      
                       // Format the schedule data according to the new instructions
                       const formattedSchedule = {
-                        classes: schedule, // Fix: schedule is already an array, not schedule.classes
+                        classes: filteredSchedule,
                         message: "Here are the available classes:",
                         bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/schedule"
                       };
@@ -965,17 +977,20 @@ app.post("/make/webhook", async (req, res) => {
                     try {
                       // Determine the category based on the message content
                       let category = "unclear_request";
-                      if (functionArgs.message && functionArgs.message.toLowerCase().includes("lost")) {
+                      const messageContent = functionArgs.message || "";
+                      const lowerMessage = messageContent.toLowerCase();
+                      
+                      if (lowerMessage.includes("lost")) {
                         category = "lost_and_found";
-                      } else if (functionArgs.message && functionArgs.message.toLowerCase().includes("complaint")) {
+                      } else if (lowerMessage.includes("complaint")) {
                         category = "complaint";
-                      } else if (functionArgs.message && functionArgs.message.toLowerCase().includes("refund")) {
+                      } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
                         category = "refund_inquiry";
                       }
                       
                       const ticket = createTicket({
                         userId: functionArgs.userId || "unknown_user",
-                        message: functionArgs.message || "Assistant requested staff handoff",
+                        message: messageContent || "Assistant requested staff handoff",
                         contactInfo: functionArgs.contactInfo || { email: "not_provided", phone: "not_provided" },
                         category: category,
                         threadId: functionArgs.threadId || null
@@ -1246,6 +1261,10 @@ app.get("/broadcast/status", requireBackendKey, async (req, res) => {
   }
 });
 
+// New endpoint: Send broadcast via Wati API
+import { scheduleWatiBroadcast } from "./watiBroadcast.js";
+app.post("/broadcast/wati/send", requireBackendKey, scheduleWatiBroadcast);
+
 const PORT = config.PORT;
 
 // Handle port already in use
@@ -1263,3 +1282,24 @@ app.listen(PORT, () => {
     console.error(err);
   }
 });
+
+function filterAndLimitDailySchedule(schedule, date) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const requestedDateStr = date || todayStr;
+  
+  // If not today, return all classes for that date
+  if (requestedDateStr !== todayStr) {
+    return schedule;
+  }
+  
+  // For today, filter out past classes and limit to next 5
+  const now = new Date();
+  const upcomingClasses = schedule.filter(classItem => {
+    const classTime = new Date(classItem.start);
+    return classTime > now;
+  });
+  
+  // Sort by start time and limit to next 5
+  upcomingClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
+  return upcomingClasses.slice(0, 5);
+}
