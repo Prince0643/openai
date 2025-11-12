@@ -476,18 +476,17 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           switch (viewType) {
             case 'weekly':
               // For weekly view, show one day at a time
-              responseText = "Here's today's schedule:\n";
+              responseText = "Here's today's schedule:";
               const dailySchedule = filterAndLimitDailySchedule(schedule, week);
               if (dailySchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
                 dailySchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
                 });
-                responseText += "\nWhich day are you interested in?";
+                responseText += "\n\nWhich day are you interested in?";
               }
               break;
               
@@ -499,7 +498,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 responseText = "Here are all classes for today:\n";
                 schedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                   responseText += "\n";
                 });
@@ -522,7 +521,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 responseText = "Here are the available classes:\n";
                 filteredSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                   responseText += "\n";
                 });
@@ -560,14 +559,14 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           switch (viewType) {
             case 'weekly':
               // For weekly view, show one day at a time
-              responseText = "Here's today's schedule:\n";
+              responseText = "Here's today's schedule:";
               const dailySchedule = filterAndLimitDailySchedule(schedule, week);
               if (dailySchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
                 dailySchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                   responseText += "\n";
                 });
@@ -583,7 +582,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 responseText = "Here are all classes for today:\n";
                 schedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                   responseText += "\n";
                 });
@@ -606,7 +605,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 responseText = "Here are the available classes:\n";
                 filteredSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `${classTime} - ${classItem.name}`;
+                  responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                   responseText += "\n";
                 });
@@ -944,18 +943,17 @@ app.post("/make/webhook", async (req, res) => {
                       switch (viewType) {
                         case 'weekly':
                           // For weekly view, show one day at a time
-                          responseText = "Here's today's schedule:\n";
+                          responseText = "Here's today's schedule:";
                           const dailySchedule = filterAndLimitDailySchedule(schedule, weekParam);
                           if (dailySchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
                             dailySchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              responseText += "\n";
                             });
-                            responseText += "\nWhich day are you interested in?";
+                            responseText += "\n\nWhich day are you interested in?";
                           }
                           break;
                           
@@ -967,7 +965,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are all classes for today:\n";
                             schedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
@@ -991,7 +989,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are the available classes:\n";
                             filteredSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
@@ -1040,14 +1038,14 @@ app.post("/make/webhook", async (req, res) => {
                       switch (viewType) {
                         case 'weekly':
                           // For weekly view, show one day at a time
-                          responseText = "Here's today's schedule:\n";
+                          responseText = "Here's today's schedule:";
                           const dailySchedule = filterAndLimitDailySchedule(schedule, weekParam);
                           if (dailySchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
                             dailySchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
@@ -1063,7 +1061,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are all classes for today:\n";
                             schedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
@@ -1107,7 +1105,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText = "Here are the available classes:\n";
                               filteredSchedule.forEach(classItem => {
                                 const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                responseText += `${classTime} - ${classItem.name}`;
+                                responseText += `\n${classTime}: ${classItem.name}`;
                                 if (classItem.coach) responseText += ` with ${classItem.coach}`;
                                 responseText += "\n";
                               });
@@ -1127,7 +1125,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are the available classes:\n";
                             filteredSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `${classTime} - ${classItem.name}`;
+                              responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
