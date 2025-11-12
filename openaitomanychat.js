@@ -534,7 +534,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           // Instead of actually booking, provide a booking link
           const { classId } = tool_args;
           // Generate a booking link - using your GymMaster portal URL
-          const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class/?classId=${classId}`;
+          const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
 
           // Return a response that includes the booking link
           const bookingResponse = {
@@ -593,7 +593,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
             memberships: memberships,
             clubs: clubs,
             message: "Here are our membership options:",
-            bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+            bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class"
           };
 
           return res.json(formattedCatalog);
@@ -871,7 +871,7 @@ app.post("/make/webhook", async (req, res) => {
                       const formattedSchedule = {
                         classes: schedule, // Fix: schedule is already an array, not schedule.classes
                         message: "Here are the available classes:",
-                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/schedule"
                       };
 
                       output = JSON.stringify(formattedSchedule);
@@ -894,7 +894,7 @@ app.post("/make/webhook", async (req, res) => {
                       try {
                         const { classId } = functionArgs;
                         // Generate a booking link - using your GymMaster portal URL
-                        const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class/?classId=${classId}`;
+                        const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
 
                         // Return a response that includes the booking link
                         const bookingResponse = {
@@ -941,7 +941,7 @@ app.post("/make/webhook", async (req, res) => {
                         memberships: memberships,
                         clubs: clubs,
                         message: "Here are our membership options:",
-                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class/"
+                        bookingLink: "https://omni.gymmasteronline.com/portal/account/book/class"
                       };
 
                       output = JSON.stringify(formattedCatalog);
