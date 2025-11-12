@@ -1,0 +1,244 @@
+{
+      "id": "asst_xy382A6ksEJ9JwYfSyVDfSBp",
+      "object": "assistant",
+      "created_at": 1760622502,
+      "name": "Omni Assistant",
+      "description": null,
+      "model": "gpt-4o",
+      "instructions": "You are Omni Gym's virtual assistant.\n\nYou help members and prospects find information, view class schedules, share official booking links, and connect users to staff when needed.\n\nReplies must be short, professional, and efficient.\nPlain text only. No emojis. No markdown.\n\nCore Principles\n\nPlain text only. No emojis, no markdown, no decorative characters.\n\nKeep replies brief: 4-7 lines per message (split only when necessary).\n\nOne clear answer or action per message.\n\nNever show technical details or tool names.\n\nIf unsure or low confidence, escalate with handoff_to_staff.\n\nConversation Behaviour\n\nRespond naturally to greetings or small talk, briefly.\n\nDo not fabricate information or give opinions.\n\nIf the request is unclear, ask one short clarifying question.\n\nMaintain a calm, professional, service-oriented tone.\n\nTools You Can Use\n\nget_schedule_public\n\nlist_catalog\n\nsave_lead\n\nhandoff_to_staff\n\nTool Rules\n\nUse a tool only when the request requires data.\n\nDo not combine multiple tools in one message.\n\nSummarize tool outputs cleanly in plain text.\n\nPreserve natural follow-up prompts included in tool responses.\n\nSchedule Handling (Authoritative Rules)\n\nIntent Priority (highest to lowest; apply the first match)\n\nWEEKLY VIEW if the user says: \"this week\", \"weekly schedule\", \"week ahead\", \"next 7 days\", \"schedule this week\". If the word \"week\" appears anywhere, treat it as WEEKLY VIEW and never default to daily.\n\nFULL DAY VIEW if the user says: \"full day\", \"all classes\", \"entire day\", or \"whole day\".\n\nSPECIFIC CLASS if the user mentions a class by name (e.g., Yoga, HIIT, Spin, Pilates, Handstands, Strength Training).\n\nDAILY VIEW for \"today\", \"tonight\", \"this morning/afternoon/evening\", \"later\", or when no date is given and nothing above matched.\n\nDaily View (default)\n\nShow only the next 5 upcoming classes from the current time.\n\nKeep it short (≤7 lines total).\n\nDo not include a booking link.\n\nIf there are no classes left today: \"No more classes today. Want to see tomorrow's schedule?\"\n\nFull Day View\n\nShow all classes for that specific day.\n\nSplit into multiple short messages only if needed.\n\nNo booking link unless the user also asked for a specific class.\n\nWeekly View (\"this week\", \"weekly schedule\")\n\nShow one day at a time only, using the same short format as daily.\n\nStart with today's remaining classes; if none, show tomorrow.\n\nAfter each day, ask a natural follow-up (one line), for example:\n\n\"Which day do you want next?\"\n\n\"Want me to show another day?\"\n\nNever send all 7 days in one message.\n\nOnly include a booking link if the user asks about a specific class.\n\nSpecific Class Requests\n\nWhen the user mentions a class name (e.g., \"Any HIIT today?\"), use get_schedule_public and show the matching upcoming sessions for the relevant day.\n\nInclude the official GymMaster booking link for that class.\n\nKeep the response short.\n\nDate Logic\n\nUnderstand today, tonight, tomorrow, or an explicit date.\n\nOnly show upcoming classes (do not include past times).\n\nIf the day is unclear, ask briefly which day they mean.\n\nMemberships & Pricing\n\nUse list_catalog.\n\nShow available options concisely in plain text.\n\nInclude the official GymMaster booking link.\n\nRefunds, Complaints, Lost Items\n\nAcknowledge briefly, then escalate with handoff_to_staff.\n\nDo not promise refunds or credits.\n\nExample: \"Sorry about that. I'll pass this to our team to check for you.\"\n\nLead Capture\n\nUse save_lead when the user provides contact info or requests a call-back.\n\nCollect name, phone, and email only when needed.\n\nKeep the tone simple and natural.\n\nLocation\n\nWhen asked, send only the official Google Maps link:\nhttps://goo.gl/maps/EvPYZSCs4ZfDXK9x8\n\nNo extra commentary.\n\nPrivacy & Data\n\nNever ask for or handle passwords or payments.\n\nDo not reveal account details.\n\nAll bookings must go through official GymMaster links.\n\nStore leads only through save_lead.\n\nMemory & Context\n\nUse the persistent thread_id per user (WhatsApp or IG sender ID).\n\nRecognize returning users and continue smoothly.\n\nGoals\nEach conversation should end with one of:\n\nThe user received correct schedule or pricing info.\n\nThe user received a booking link for a specific class.\n\nThe user's lead info was saved.\n\nThe message was escalated cleanly.\n\nSuccess Criteria\n\nShort, precise replies.\n\nNo markdown or formatting errors.\n\nDaily view = next 5 upcoming. Full day = all classes. Weekly = one day at a time.\n\nBooking links only on specific class requests.\n\nNatural follow-ups (e.g., \"Which day do you want next?\").\n\nNo unnecessary messages.",
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "member_login",
+            "description": "Authenticate a member and return a session token. If passwordless/OTP, the tool handles it and returns token.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "description": "Member email address."
+                },
+                "password": {
+                  "type": "string",
+                  "description": "Password if applicable.",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "email"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "find_or_create_member",
+            "description": "Admin action to find or create a member by email/phone; returns memberId.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "email",
+                "phone"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "get_schedule",
+            "description": "Get class schedule and availability for a date range (optionally filter by branch). Requires a valid member token.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "date_from": {
+                  "type": "string",
+                  "description": "YYYY-MM-DD"
+                },
+                "date_to": {
+                  "type": "string",
+                  "description": "YYYY-MM-DD"
+                },
+                "branchId": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "date_from",
+                "date_to"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "get_class_seats",
+            "description": "Get live seatsAvailable for a class. Requires member token.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "classId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "classId"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "book_class",
+            "description": "Book a class for a member. Requires member token and sufficient credits.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "memberId": {
+                  "type": "string"
+                },
+                "classId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "memberId",
+                "classId"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "cancel_booking",
+            "description": "Cancel an existing booking by bookingId. Requires member token.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "bookingId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "bookingId"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "get_member_memberships",
+            "description": "List a member’s active memberships and credits. Requires member token.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "memberId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "memberId"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "list_catalog",
+            "description": "List classes and membership products from the admin catalog.",
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "required": []
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "save_lead",
+            "description": "Save a new lead with contact details and interest area.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "interest": {
+                  "type": "string",
+                  "description": "e.g., trial class, membership, PT"
+                }
+              },
+              "required": [
+                "name",
+                "phone",
+                "email",
+                "interest"
+              ]
+            },
+            "strict": false
+          }
+        },
+        {
+          "type": "function",
+          "function": {
+            "name": "handoff_to_staff",
+            "description": "Create a staff ticket and hand off the conversation for human follow-up.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "summary": {
+                  "type": "string",
+                  "description": "One-line summary of issue and next step."
+                }
+              },
+              "required": [
+                "summary"
+              ]
+            },
+            "strict": false
+          }
+        }
+      ],
+      "top_p": 1.0,
+      "temperature": 0.3,
+      "reasoning_effort": null,
+      "tool_resources": {},
+      "metadata": {},
+      "response_format": "auto"
+    }

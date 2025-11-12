@@ -953,7 +953,8 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\n\nLet me know which day you'd like to see next.";
+                            // Make the follow-up more explicit for the assistant
+                            responseText += "Follow-up: Let me know which day you'd like to see next.";
                           }
                           break;
                           
