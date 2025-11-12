@@ -935,21 +935,68 @@ app.post("/make/webhook", async (req, res) => {
                       
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
                       
-                      // Apply daily view logic (next 5 classes only for today)
-                      const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
+                      // Determine the view type based on the user's message
+                      const viewType = determineScheduleViewType(message);
                       
-                      // Format as plain text response without booking link for general schedule views
+                      // Format response based on view type
                       let responseText = "";
-                      if (filteredSchedule.length === 0) {
-                        responseText = "No more classes today. Want to see tomorrow's schedule?";
-                      } else {
-                        responseText = "Here are the available classes:\n";
-                        filteredSchedule.forEach(classItem => {
-                          const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                          responseText += `${classTime} - ${classItem.name}`;
-                          if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                          responseText += "\n";
-                        });
+                      
+                      switch (viewType) {
+                        case 'weekly':
+                          // For weekly view, show one day at a time
+                          responseText = "Here's today's schedule:\n";
+                          const dailySchedule = filterAndLimitDailySchedule(schedule, weekParam);
+                          if (dailySchedule.length === 0) {
+                            responseText = "No more classes today. Want to see tomorrow's schedule?";
+                          } else {
+                            dailySchedule.forEach(classItem => {
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              responseText += `${classTime} - ${classItem.name}`;
+                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              responseText += "\n";
+                            });
+                            responseText += "\nWhich day are you interested in?";
+                          }
+                          break;
+                          
+                        case 'full_day':
+                          // For full day view, show all classes for the day
+                          if (schedule.length === 0) {
+                            responseText = "No classes scheduled for today.";
+                          } else {
+                            responseText = "Here are all classes for today:\n";
+                            schedule.forEach(classItem => {
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              responseText += `${classTime} - ${classItem.name}`;
+                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              responseText += "\n";
+                            });
+                          }
+                          break;
+                          
+                        case 'specific_class':
+                          // For specific class view, we would include booking link in the assistant response
+                          // The assistant should handle this case
+                          responseText = "I can help you book that class. Let me check the available times for you.";
+                          break;
+                          
+                        case 'daily':
+                        default:
+                          // Apply daily view logic (next 5 classes only for today)
+                          const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
+                          
+                          if (filteredSchedule.length === 0) {
+                            responseText = "No more classes today. Want to see tomorrow's schedule?";
+                          } else {
+                            responseText = "Here are the available classes:\n";
+                            filteredSchedule.forEach(classItem => {
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              responseText += `${classTime} - ${classItem.name}`;
+                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              responseText += "\n";
+                            });
+                          }
+                          break;
                       }
                       
                       output = JSON.stringify({ message: responseText });
