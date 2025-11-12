@@ -486,7 +486,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                 });
-                responseText += "\n\nWhich day are you interested in?";
+                responseText += "\nLet me know which day you'd like to see next.";
               }
               break;
               
@@ -953,7 +953,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\n\nWhich day are you interested in?";
+                            responseText += "\nLet me know which day you'd like to see next.";
                           }
                           break;
                           
