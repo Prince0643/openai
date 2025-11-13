@@ -1,35 +1,41 @@
-import fetch from 'node-fetch';
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
-async function testWebhook() {
-  try {
-    console.log('Testing webhook endpoint...');
-    
-    const response = await fetch('http://localhost:10000/make/webhook', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: "show today's classes at Omni Kuta.",
-        userId: "371492018",
-        threadId: ""
-      })
-    });
-    
-    console.log('Response status:', response.status);
-    console.log('Response headers:', response.headers.raw());
-    
-    const responseBody = await response.text();
-    console.log('Response body:', responseBody);
-    
-    if (response.ok) {
-      console.log('Webhook test successful!');
-    } else {
-      console.log('Webhook test failed with status:', response.status);
-    }
-  } catch (error) {
-    console.error('Webhook test failed with error:', error);
-  }
-}
+// Middleware to parse JSON bodies
+app.use(bodyParser.json());
 
-testWebhook();
+// Test endpoint that simulates the webhook response
+app.post('/test-webhook', (req, res) => {
+  console.log('Received test webhook request:', JSON.stringify(req.body, null, 2));
+  
+  // Simulate a "this week" request to trigger weekly view
+  const testPayload = {
+    message: "What classes are available this week?",
+    userId: "test_user_123",
+    platform: "manychat"
+  };
+  
+  console.log('Sending test payload:', JSON.stringify(testPayload, null, 2));
+  
+  // In a real test, you would send this to your actual webhook endpoint
+  // For now, we'll just log what the response should look like
+  console.log('\nExpected response format:');
+  console.log('--------------------');
+  console.log("Here's today's schedule:");
+  console.log("04:00 PM: Vinyasa Flow");
+  console.log("05:30 PM: Boxing with Vincent Y");
+  console.log("Which day are you interested in?");
+  console.log('--------------------');
+  
+  res.json({
+    success: true,
+    message: 'Test payload sent. Check console for expected response format.'
+  });
+});
+
+const PORT = 3001;
+app.listen(PORT, () => {
+  console.log(`Test webhook server running on port ${PORT}`);
+  console.log(`Send a POST request to http://localhost:${PORT}/test-webhook to test`);
+});
