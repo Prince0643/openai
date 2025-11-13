@@ -475,18 +475,20 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           
           switch (viewType) {
             case 'weekly':
-              // For weekly view, show one day at a time
+              // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
               responseText = "Here's today's schedule:";
               const dailySchedule = filterAndLimitDailySchedule(schedule, week);
               if (dailySchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
-                dailySchedule.forEach(classItem => {
+                // Limit to just 2 classes for weekly view to keep it concise
+                const limitedSchedule = dailySchedule.slice(0, 2);
+                limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
                 });
-                responseText += "\n\nLet me know which day you'd like to see next.";
+                responseText += "\nWhich day are you interested in?";
               }
               break;
               
@@ -512,19 +514,21 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
               
             case 'daily':
             default:
-              // Apply daily view logic (next 5 classes only for today)
+              // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
               const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
               
               if (filteredSchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
-                responseText = "Here are the available classes:\n";
-                filteredSchedule.forEach(classItem => {
+                responseText = "Here are the available classes:";
+                // Limit to just 2 classes for daily view to keep it concise
+                const limitedSchedule = filteredSchedule.slice(0, 2);
+                limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
                 });
+                responseText += "\nWant to see more classes or another day?";
               }
               break;
           }
@@ -558,19 +562,20 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           
           switch (viewType) {
             case 'weekly':
-              // For weekly view, show one day at a time
+              // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
               responseText = "Here's today's schedule:";
               const dailySchedule = filterAndLimitDailySchedule(schedule, week);
               if (dailySchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
-                dailySchedule.forEach(classItem => {
+                // Limit to just 2 classes for weekly view to keep it concise
+                const limitedSchedule = dailySchedule.slice(0, 2);
+                limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
                 });
-                responseText += "\n\nLet me know which day you'd like to see next.";
+                responseText += "\nWhich day are you interested in?";
               }
               break;
               
@@ -596,19 +601,21 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
               
             case 'daily':
             default:
-              // Apply daily view logic (next 5 classes only for today)
+              // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
               const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
               
               if (filteredSchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
-                responseText = "Here are the available classes:\n";
-                filteredSchedule.forEach(classItem => {
+                responseText = "Here are the available classes:";
+                // Limit to just 2 classes for daily view to keep it concise
+                const limitedSchedule = filteredSchedule.slice(0, 2);
+                limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
                 });
+                responseText += "\nWant to see more classes or another day?";
               }
               break;
           }
@@ -942,19 +949,20 @@ app.post("/make/webhook", async (req, res) => {
                       
                       switch (viewType) {
                         case 'weekly':
-                          // For weekly view, show one day at a time
+                          // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
                           responseText = "Here's today's schedule:";
                           const dailySchedule = filterAndLimitDailySchedule(schedule, weekParam);
                           if (dailySchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
-                            dailySchedule.forEach(classItem => {
+                            // Limit to just 2 classes for weekly view to keep it concise
+                            const limitedSchedule = dailySchedule.slice(0, 2);
+                            limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            // Make the follow-up more explicit for the assistant
-                            responseText += "Follow-up: Let me know which day you'd like to see next.";
+                            responseText += "\nWhich day are you interested in?";
                           }
                           break;
                           
@@ -974,26 +982,69 @@ app.post("/make/webhook", async (req, res) => {
                           break;
                           
                         case 'specific_class':
-                          // For specific class view, we would include booking link in the assistant response
-                          // The assistant should handle this case
-                          responseText = "I can help you book that class. Let me check the available times for you.";
+                          // For specific class view, find the class and provide a booking link
+                          // First, try to find a class that matches the user's request
+                          let matchingClass = null;
+                          const lowerMessage = message.toLowerCase();
+                          
+                          // Look for specific class types in the schedule
+                          for (const classItem of schedule) {
+                            const className = classItem.name.toLowerCase();
+                            if (
+                              (lowerMessage.includes('yoga') && className.includes('yoga')) ||
+                              (lowerMessage.includes('hiit') && className.includes('hiit')) ||
+                              (lowerMessage.includes('spin') && className.includes('spin')) ||
+                              (lowerMessage.includes('pilates') && className.includes('pilates')) ||
+                              (lowerMessage.includes('handstands') && className.includes('handstands')) ||
+                              (lowerMessage.includes('strength') && className.includes('strength'))
+                            ) {
+                              matchingClass = classItem;
+                              break;
+                            }
+                          }
+                          
+                          if (matchingClass) {
+                            const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            responseText = `I found a ${matchingClass.name} class today at ${classTime}`;
+                            if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
+                            responseText += ".\n\n";
+                            responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
+                          } else {
+                            // If we can't find a specific match, show today's classes with a general booking link
+                            const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
+                            if (filteredSchedule.length === 0) {
+                              responseText = "No more classes today. Want to see tomorrow's schedule?";
+                            } else {
+                              responseText = "Here are the available classes:";
+                              // Limit to just 2 classes for specific class fallback to keep it concise
+                              const limitedSchedule = filteredSchedule.slice(0, 2);
+                              limitedSchedule.forEach(classItem => {
+                                const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                responseText += `\n${classTime}: ${classItem.name}`;
+                                if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              });
+                              responseText += "\nTo book any of these classes, please visit: https://omni.gymmasteronline.com/portal/account/book/class/schedule";
+                            }
+                          }
                           break;
                           
                         case 'daily':
                         default:
-                          // Apply daily view logic (next 5 classes only for today)
+                          // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
                           const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
                           
                           if (filteredSchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
-                            responseText = "Here are the available classes:\n";
-                            filteredSchedule.forEach(classItem => {
+                            responseText = "Here are the available classes:";
+                            // Limit to just 2 classes for daily view to keep it concise
+                            const limitedSchedule = filteredSchedule.slice(0, 2);
+                            limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              responseText += "\n";
                             });
+                            responseText += "\nWant to see more classes or another day?";
                           }
                           break;
                       }
@@ -1103,12 +1154,13 @@ app.post("/make/webhook", async (req, res) => {
                             if (filteredSchedule.length === 0) {
                               responseText = "No more classes today. Want to see tomorrow's schedule?";
                             } else {
-                              responseText = "Here are the available classes:\n";
-                              filteredSchedule.forEach(classItem => {
+                              responseText = "Here are the available classes:";
+                              // Limit to just 2 classes for specific class fallback to keep it concise
+                              const limitedSchedule = filteredSchedule.slice(0, 2);
+                              limitedSchedule.forEach(classItem => {
                                 const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                                 responseText += `\n${classTime}: ${classItem.name}`;
                                 if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                                responseText += "\n";
                               });
                               responseText += "\nTo book any of these classes, please visit: https://omni.gymmasteronline.com/portal/account/book/class/schedule";
                             }
@@ -1137,6 +1189,146 @@ app.post("/make/webhook", async (req, res) => {
                       output = JSON.stringify({ message: responseText });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "get_class_seats":
+                    if (gymMaster) {
+                      console.log("Calling GymMaster getClassSeats with:", functionArgs.classId);
+                      const seats = await gymMaster.getClassSeats(functionArgs.classId);
+                      console.log("GymMaster response:", JSON.stringify(seats, null, 2));
+                      output = JSON.stringify(seats);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "book_class":
+                    if (gymMaster) {
+                      // Instead of actually booking, provide a booking link
+                      const { classId } = functionArgs;
+                      // Generate a booking link - using your GymMaster portal URL
+                      const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
+                      
+                      // Return a response that includes the booking link in plain text format
+                      const responseText = `Please use the link below to complete your booking:\n${bookingLink}`;
+                      
+                      output = JSON.stringify({ message: responseText });
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "cancel_booking":
+                    if (gymMaster) {
+                      console.log("Calling GymMaster cancelBooking with:", functionArgs.token, functionArgs.bookingId);
+                      const cancellation = await gymMaster.cancelBooking(functionArgs.token, functionArgs.bookingId);
+                      console.log("GymMaster response:", JSON.stringify(cancellation, null, 2));
+                      output = JSON.stringify(cancellation);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "get_member_memberships":
+                    if (gymMaster) {
+                      console.log("Calling GymMaster getMemberMemberships with:", functionArgs.token);
+                      const memberships = await gymMaster.getMemberMemberships(functionArgs.token);
+                      console.log("GymMaster response:", JSON.stringify(memberships, null, 2));
+                      output = JSON.stringify(memberships);
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "list_catalog":
+                    if (gymMaster) {
+                      console.log("Calling GymMaster listMemberships");
+                      const memberships = await gymMaster.listMemberships();
+                      console.log("GymMaster listMemberships response:", JSON.stringify(memberships, null, 2));
+                      const clubs = await gymMaster.listClubs();
+                      console.log("GymMaster listClubs response:", JSON.stringify(clubs, null, 2));
+                      
+                      // Format as plain text response for membership options
+                      let responseText = "Here are our membership options:\n";
+                      
+                      // Add memberships
+                      if (memberships && memberships.length > 0) {
+                        memberships.forEach(membership => {
+                          responseText += `- ${membership.name}: ${membership.description || ''}\n`;
+                        });
+                      }
+                      
+                      // Add clubs/locations
+                      if (clubs && clubs.length > 0) {
+                        responseText += "\nOur locations:\n";
+                        clubs.forEach(club => {
+                          responseText += `- ${club.name}: ${club.address || ''}\n`;
+                        });
+                      }
+                      
+                      // Add official booking link at the end
+                      responseText += "\nFor pricing and to sign up: https://omni.gymmasteronline.com/portal/account";
+                      
+                      output = JSON.stringify({ message: responseText });
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "save_lead":
+                    if (gymMaster) {
+                      console.log("Calling GymMaster createProspect with:", functionArgs.name, functionArgs.phone, functionArgs.email, functionArgs.interest);
+                      const lead = await gymMaster.createProspect(
+                        functionArgs.name, 
+                        functionArgs.phone, 
+                        functionArgs.email, 
+                        functionArgs.interest
+                      );
+                      console.log("GymMaster response:", JSON.stringify(lead, null, 2));
+                      
+                      // Format as plain text response for lead capture
+                      const responseText = "Thank you for your interest! Our team will contact you shortly.";
+                      
+                      output = JSON.stringify({ message: responseText, success: true });
+                    } else {
+                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
+                    }
+                    break;
+                    
+                  case "handoff_to_staff":
+                    // Create a proper ticket in the support system with conversation context
+                    try {
+                      // Determine the category based on the message content
+                      let category = "unclear_request";
+                      const messageContent = functionArgs.message || "";
+                      const lowerMessage = messageContent.toLowerCase();
+                      
+                      if (lowerMessage.includes("lost")) {
+                        category = "lost_and_found";
+                      } else if (lowerMessage.includes("complaint")) {
+                        category = "complaint";
+                      } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
+                        category = "refund_inquiry";
+                      }
+                      
+                      const ticket = createTicket({
+                        userId: functionArgs.userId || "unknown_user",
+                        message: messageContent || "Assistant requested staff handoff",
+                        contactInfo: functionArgs.contactInfo || { email: "not_provided", phone: "not_provided" },
+                        category: category,
+                        threadId: functionArgs.threadId || null
+                      });
+                      
+                      const responseText = "I've alerted our staff and created a ticket for you. Someone will reach out shortly.";
+                      
+                      output = JSON.stringify({ message: responseText, ticketId: ticket.ticketId });
+                    } catch (error) {
+                      console.error("Error creating staff ticket:", error);
+                      output = JSON.stringify({ 
+                        error: true, 
+                        message: "Failed to create staff ticket: " + error.message 
+                      });
                     }
                     break;
                     
@@ -1554,16 +1746,16 @@ function filterAndLimitDailySchedule(schedule, date) {
     return schedule;
   }
   
-  // For today, filter out past classes and limit to next 5
+  // For today, filter out past classes and limit to next 2 (to keep responses short)
   const now = new Date();
   const upcomingClasses = schedule.filter(classItem => {
     const classTime = new Date(classItem.start);
     return classTime > now;
   });
   
-  // Sort by start time and limit to next 5
+  // Sort by start time and limit to next 2
   upcomingClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
-  return upcomingClasses.slice(0, 5);
+  return upcomingClasses.slice(0, 2);
 }
 
 /**
