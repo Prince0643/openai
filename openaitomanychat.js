@@ -1169,19 +1169,21 @@ app.post("/make/webhook", async (req, res) => {
                           
                         case 'daily':
                         default:
-                          // Apply daily view logic (next 5 classes only for today)
+                          // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
                           const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
                           
                           if (filteredSchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
-                            responseText = "Here are the available classes:\n";
-                            filteredSchedule.forEach(classItem => {
+                            responseText = "Here are the available classes:";
+                            // Limit to just 2 classes for daily view to keep it concise
+                            const limitedSchedule = filteredSchedule.slice(0, 2);
+                            limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              responseText += "\n";
                             });
+                            responseText += "\nWant to see more classes or another day?";
                           }
                           break;
                       }
@@ -1286,139 +1288,6 @@ app.post("/make/webhook", async (req, res) => {
                         functionArgs.interest
                       );
                       console.log("GymMaster response:", JSON.stringify(lead, null, 2));
-                      
-                      // Format as plain text response for lead capture
-                      const responseText = "Thank you for your interest! Our team will contact you shortly.";
-                      
-                      output = JSON.stringify({ message: responseText, success: true });
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                    }
-                    break;
-                    
-                  case "handoff_to_staff":
-                    // Create a proper ticket in the support system with conversation context
-                    try {
-                      // Determine the category based on the message content
-                      let category = "unclear_request";
-                      const messageContent = functionArgs.message || "";
-                      const lowerMessage = messageContent.toLowerCase();
-                      
-                      if (lowerMessage.includes("lost")) {
-                        category = "lost_and_found";
-                      } else if (lowerMessage.includes("complaint")) {
-                        category = "complaint";
-                      } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
-                        category = "refund_inquiry";
-                      }
-                      
-                      const ticket = createTicket({
-                        userId: functionArgs.userId || "unknown_user",
-                        message: messageContent || "Assistant requested staff handoff",
-                        contactInfo: functionArgs.contactInfo || { email: "not_provided", phone: "not_provided" },
-                        category: category,
-                        threadId: functionArgs.threadId || null
-                      });
-                      
-                      const responseText = "I've alerted our staff and created a ticket for you. Someone will reach out shortly.";
-                      
-                      output = JSON.stringify({ message: responseText, ticketId: ticket.ticketId });
-                    } catch (error) {
-                      console.error("Error creating staff ticket:", error);
-                      output = JSON.stringify({ 
-                        error: true, 
-                        message: "Failed to create staff ticket: " + error.message 
-                      });
-                    }
-                    break;
-                    
-                  case "get_class_seats":
-                    if (gymMaster) {
-                      const seats = await gymMaster.getClassSeats(functionArgs.classId);
-                      output = JSON.stringify(seats);
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                    }
-                    break;
-                    
-                  case "book_class":
-                    if (gymMaster) {
-                      try {
-                        const { classId } = functionArgs;
-                        // Generate a booking link - using your GymMaster portal URL
-                        const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
-                        
-                        // Return a response that includes the booking link in plain text format
-                        const responseText = `Please use the link below to complete your booking:\n${bookingLink}`;
-                        
-                        output = JSON.stringify({ message: responseText });
-                      } catch (e) {
-                        console.error("Error generating booking link:", e);
-                        output = JSON.stringify({ error: true, message: "Cannot generate booking link: " + e.message });
-                      }
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                    }
-                    break;
-                    
-                  case "cancel_booking":
-                    if (gymMaster) {
-                      const cancellation = await gymMaster.cancelBooking(functionArgs.token, functionArgs.bookingId);
-                      output = JSON.stringify(cancellation);
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMasterAPI not configured" });
-                    }
-                    break;
-                    
-                  case "get_member_memberships":
-                    if (gymMaster) {
-                      const memberships = await gymMaster.getMemberMemberships(functionArgs.token);
-                      output = JSON.stringify(memberships);
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                    }
-                    break;
-                    
-                  case "list_catalog":
-                    if (gymMaster) {
-                      const memberships = await gymMaster.listMemberships();
-                      const clubs = await gymMaster.listClubs();
-                      
-                      // Format as plain text response for membership options
-                      let responseText = "Here are our membership options:\n";
-                      
-                      // Add memberships
-                      if (memberships && memberships.length > 0) {
-                        memberships.forEach(membership => {
-                          responseText += `- ${membership.name}: ${membership.description || ''}\n`;
-                        });
-                      }
-                      
-                      // Add clubs/locations
-                      if (clubs && clubs.length > 0) {
-                        responseText += "\nOur locations:\n";
-                        clubs.forEach(club => {
-                          responseText += `- ${club.name}: ${club.address || ''}\n`;
-                        });
-                      }
-                      
-                      // Add official booking link at the end
-                      responseText += "\nFor pricing and to sign up: https://omni.gymmasteronline.com/portal/account/book/class";
-                      
-                      output = JSON.stringify({ message: responseText });
-                    } else {
-                      output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
-                    }
-                    break;
-                    
-                  case "save_lead":
-                    if (gymMaster) {
-                      const lead = await gymMaster.createProspect(
-                        functionArgs.name, 
-                        functionArgs.phone, 
-                        functionArgs.email, 
-                        functionArgs.interest
-                      );
                       
                       // Format as plain text response for lead capture
                       const responseText = "Thank you for your interest! Our team will contact you shortly.";
