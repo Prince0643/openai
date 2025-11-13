@@ -119,6 +119,33 @@ function isNonsenseOrUnknown(message) {
 }
 
 /**
+ * Check if a response is a schedule response that should not be truncated
+ * @param {string} responseText The assistant's response text
+ * @returns {boolean} Whether the response is a schedule response
+ */
+function isScheduleResponse(responseText) {
+  if (!responseText) return false;
+  
+  const scheduleIndicators = [
+    "Here's today's schedule:",
+    "Here are the available classes:",
+    "Here are all classes for today:",
+    "schedule",
+    "classes"
+  ];
+  
+  const lowerText = responseText.toLowerCase();
+  
+  for (const indicator of scheduleIndicators) {
+    if (lowerText.includes(indicator.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Handle fallback and escalation for low confidence responses
  * @param {string} userId User ID
  * @param {string} message Original user message
@@ -165,14 +192,27 @@ function handleFallback(userId, message, responseText, threadId) {
   
   // Format the response according to the new instructions:
   // - Plain text only
-  // - Maximum of four short lines
-  // - Real line breaks for spacing
+  // - Maximum of four short lines for general responses
+  // - More lines allowed for schedule responses
   let formattedResponse = responseText;
   
-  // If the response is too long, try to shorten it
-  if (formattedResponse.split('\n').length > 4) {
-    const lines = formattedResponse.split('\n');
-    formattedResponse = lines.slice(0, 4).join('\n');
+  // Check if this is a schedule response that should not be truncated
+  if (!isScheduleResponse(responseText)) {
+    // If the response is too long, try to shorten it (for non-schedule responses)
+    if (formattedResponse.split('\n').length > 4) {
+      const lines = formattedResponse.split('\n');
+      formattedResponse = lines.slice(0, 4).join('\n');
+    }
+  } else {
+    // For schedule responses, allow up to 7 lines to accommodate:
+    // - Header line
+    // - Up to 2 class lines
+    // - Follow-up question line
+    // - Extra spacing if needed
+    if (formattedResponse.split('\n').length > 7) {
+      const lines = formattedResponse.split('\n');
+      formattedResponse = lines.slice(0, 7).join('\n');
+    }
   }
   
   // If we get here, the response seems reasonable

@@ -962,7 +962,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\nWhich day are you interested in?";
+                            responseText += "\nFollow-up: Which day are you interested in?";
                           }
                           break;
                           
@@ -1101,7 +1101,7 @@ app.post("/make/webhook", async (req, res) => {
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
-                            responseText += "\n\nLet me know which day you'd like to see next.";
+                            responseText += "\nFollow-up: Which day are you interested in?";
                           }
                           break;
                           
