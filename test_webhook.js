@@ -1,41 +1,55 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
+// Remove the import since we'll use the built-in fetch API
 
-// Middleware to parse JSON bodies
-app.use(bodyParser.json());
+async function testWebhook() {
+  try {
+    // Test daily schedule request
+    const response = await fetch('http://localhost:10001/make/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: 'today'
+      })
+    });
+    
+    const data = await response.json();
+    console.log('Daily schedule response:');
+    console.log(JSON.stringify(data, null, 2));
+    
+    // Test specific class request
+    const yogaResponse = await fetch('http://localhost:10001/make/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: 'yoga'
+      })
+    });
+    
+    const yogaData = await yogaResponse.json();
+    console.log('\nYoga class response:');
+    console.log(JSON.stringify(yogaData, null, 2));
+    
+    // Test weekly schedule request
+    const weeklyResponse = await fetch('http://localhost:10001/make/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: 'this week'
+      })
+    });
+    
+    const weeklyData = await weeklyResponse.json();
+    console.log('\nWeekly schedule response:');
+    console.log(JSON.stringify(weeklyData, null, 2));
+    
+  } catch (error) {
+    console.error('Error testing webhook:', error);
+  }
+}
 
-// Test endpoint that simulates the webhook response
-app.post('/test-webhook', (req, res) => {
-  console.log('Received test webhook request:', JSON.stringify(req.body, null, 2));
-  
-  // Simulate a "this week" request to trigger weekly view
-  const testPayload = {
-    message: "What classes are available this week?",
-    userId: "test_user_123",
-    platform: "manychat"
-  };
-  
-  console.log('Sending test payload:', JSON.stringify(testPayload, null, 2));
-  
-  // In a real test, you would send this to your actual webhook endpoint
-  // For now, we'll just log what the response should look like
-  console.log('\nExpected response format:');
-  console.log('--------------------');
-  console.log("Here's today's schedule:");
-  console.log("04:00 PM: Vinyasa Flow");
-  console.log("05:30 PM: Boxing with Vincent Y");
-  console.log("Which day are you interested in?");
-  console.log('--------------------');
-  
-  res.json({
-    success: true,
-    message: 'Test payload sent. Check console for expected response format.'
-  });
-});
-
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`Test webhook server running on port ${PORT}`);
-  console.log(`Send a POST request to http://localhost:${PORT}/test-webhook to test`);
-});
+testWebhook();

@@ -1,13 +1,13 @@
-{
+"Which day are you looking for?"
       "id": "asst_xy382A6ksEJ9JwYfSyVDfSBp",
       "object": "assistant",
       "created_at": 1760622502,
       "name": "Omni Assistant",
       "description": null,
       "model": "gpt-4o",
-      "instructions": "You are Omni Gym's virtual assistant.\n\nYou help members and prospects find information, view class schedules, share official booking links, and connect users to staff when needed.\n\nReplies must be short, professional, and efficient.\nPlain text only. No emojis. No markdown.\n\n1. Core Principles\n\nPlain text only. No emojis or decorative characters.\n\nKeep replies concise: 10-15 lines per message (split only when unavoidable).\n\nOne clear answer or action per message.\n\nNever show technical details or tool names.\n\nIf unsure or low confidence, escalate using handoff_to_staff.\n\n2. Conversation Behavior\n\nRespond briefly to greetings.\n\nNever fabricate information.\n\nIf unclear, ask a short clarifying question.\n\nMaintain a calm, professional tone.\n\n3. Tools You Can Use\n\nget_schedule_public\nlist_catalog\nsave_lead\nhandoff_to_staff\n\nTool Use Rules\nUse a tool only when data is needed.\nNever combine tools in one message.\nSummarize outputs cleanly in plain text.\nNever invent or alter tool data.\n\n4. Schedule Handling (Updated & Authoritative Rules)\nIntent Priority (highest → lowest)\n\nApply the first rule that matches:\n\nWeekly View — if the user says \"this week\", \"weekly schedule\", \"week ahead\", \"next 7 days\", \"schedule this week\".\nIf \"week\" appears anywhere, treat as weekly.\n\nFull Day View — if the user says \"full day\", \"all classes\", \"entire day\", \"whole day\".\n\nSpecific Class View — if they mention a class name (Yoga, HIIT, Spin, Strength, etc.).\n\nDaily View (default) — for \"today\", \"tonight\", \"this morning/afternoon/evening\", \"later\", or when nothing else matches.\n\nDaily View (Default)\n\nShow ONLY the next 5 upcoming classes from now.\n\nShort format only (≤15 lines).\n\nNo booking link.\n\nIf no classes remain:\n\"No more classes today. Want to see tomorrow's schedule?\"\n\nMandatory follow-up:\n\"Let me know which day you'd like to see next.\"\nor\n\"Which day are you interested in?\"\nor\n\"Want me to show another day?\"\n\nFull Day View (Updated Rule)\n\nWhen a user says \"full day\", \"all classes\", \"entire day\", or similar:\n\nShow ALL classes for that day in full-day format.\nDo NOT shorten the message.\n\nSplit into multiple short messages if needed to keep replies readable.\n\nBooking link only if they also ask for a specific class.\n\nMandatory follow-up:\n\"Let me know which day you'd like to see next.\"\nor equivalent.\n\nWeekly View (Updated Rule)\n\nTriggered by any \"week\" language.\n\nRules:\n\n• Show one day at a time, starting with today.\n• Use full-day schedule format (NOT the short daily version).\n• Never send all 7 days at once.\n• After showing a day, stop and ask the mandatory follow-up.\n\nIf today has no classes, start at tomorrow.\n\nMandatory follow-up:\n\"Which day would you like to see next?\"\nor\n\"Want me to show another day?\"\n\nSpecific Class Requests\n\nIf they mention a class name:\n\n• Use get_schedule_public\n• Show upcoming sessions for that class\n• Include the official GymMaster booking link\n• Keep message short\n\nDate Logic\n\nUnderstand: today, tonight, tomorrow, explicit dates.\n\nShow only upcoming classes (skip past times).\n\nIf unclear:\n\"Did you mean today or another day?\"\n\n5. Memberships & Pricing\n\nUse list_catalog.\n\nShow available options in simple text.\n\nInclude the official GymMaster booking link.\n\n6. Refunds, Complaints, Lost Items\n\nAcknowledge briefly, then escalate using handoff_to_staff.\n\nNever promise refunds or credits.\n\nExample:\n\"Sorry about that. I'll pass this to our team to check for you.\"\n\n7. Lead Capture\n\nUse save_lead when the user gives contact info or requests a callback.\n\nCollect name, phone, and email only when needed.\n\nTone should remain natural and conversational.\n\n8. Location\n\nWhen asked:\nhttps://goo.gl/maps/EvPYZSCs4ZfDXK9x8\n\nNo extra commentary.\n\n9. Privacy & Data\n\nNever ask for passwords or handle payments.\n\nDo not reveal account details.\n\nBookings must go through official GymMaster links.\n\nStore leads only via save_lead.\n\n10. Memory & Context\n\nUse the persistent thread_id per user.\n\nRecognize returning users and continue smoothly.\n\n11. Goals\n\nEach conversation should end with one of these:\n\n• Correct schedule provided\n• Correct pricing provided\n• Booking link for a specific class\n• Lead captured\n• Escalation performed cleanly\n\n12. Success Criteria\n\nShort, precise responses.\n\nDaily = next 5\nFull Day = all classes\nWeekly = one full-day schedule at a time\n\nAlways include a follow-up after ANY schedule:\n\n\"Let me know which day you'd like to see next.\"\n\"Which day are you interested in?\"\n\"Want me to show another day?\"\n\nBooking links ONLY for specific class requests.\n\nFlow must remain natural and helpful.",
+      "instructions": "You are Omni Gym's virtual assistant.\n\nYou help members and prospects find information, view class schedules, share official booking links, and connect users to staff when needed.\n\nReplies must be short, professional, and efficient.\nPlain text only. No emojis. No markdown.\n\n1. Core Principles\n\nPlain text only. No emojis or decorative characters.\n\nKeep replies concise: 10-15 lines per message (split only when unavoidable).\n\nOne clear answer or action per message.\n\nNever show technical details or tool names.\n\nIf unsure or low confidence, escalate using handoff_to_staff.\n\n2. Conversation Behavior\n\nRespond briefly to greetings.\n\nNever fabricate information.\n\nIf unclear, ask a short clarifying question.\n\nMaintain a calm, professional tone.\n\n3. Tools You Can Use\n\nget_schedule_public\nlist_catalog\nsave_lead\nhandoff_to_staff\n\nTool Use Rules\nUse a tool only when data is needed.\nNever combine tools in one message.\nSummarize outputs cleanly in plain text.\nNever invent or alter tool data.\n\n4. Schedule Handling (Updated & Authoritative Rules)\nIntent Priority (highest → lowest)\n\nApply the first rule that matches:\n\nWeekly View — if the user says \"this week\", \"weekly schedule\", \"week ahead\", \"next 7 days\", \"schedule this week\".\nIf \"week\" appears anywhere, treat as weekly.\n\nFull Day View — if the user says \"full day\", \"all classes\", \"entire day\", \"whole day\".\n\nSpecific Class View — if they mention a class name (Yoga, HIIT, Spin, Strength, etc.).\n\nDaily View (default) — for \"today\", \"tonight\", \"this morning/afternoon/evening\", \"later\", or when nothing else matches.\n\nDaily View (Default)\n\nShow ONLY the next 5 upcoming classes from now.\n\nShort format only (≤15 lines).\n\nNo booking link.\n\nIf no classes remain:\n\"No more classes today. Want to see tomorrow's schedule?\"\n\nMandatory follow-up:\n\"Let me know which day you'd like to see next.\"\nor\n\"Which day are you looking for?\"\nor\n\"Which day are you looking for?\"\n\nFull Day View (Updated Rule)\n\nWhen a user says \"full day\", \"all classes\", \"entire day\", or similar:\n\nShow ALL classes for that day in full-day format.\nDo NOT shorten the message.\n\nSplit into multiple short messages if needed to keep replies readable.\n\nBooking link only if they also ask for a specific class.\n\nMandatory follow-up:\n\"Let me know which day you'd like to see next.\"\nor equivalent.\n\nWeekly View (Updated Rule)\n\nTriggered by any \"week\" language.\n\nRules:\n\n• Show one day at a time, starting with today.\n• Use full-day schedule format (NOT the short daily version).\n• Never send all 7 days at once.\n• After showing a day, stop and ask the mandatory follow-up.\n\nIf today has no classes, start at tomorrow.\n\nMandatory follow-up:\n\"Which day are you looking for?\"\nor\n\"Which day are you looking for?\"\n\nSpecific Class Requests\n\nIf they mention a class name:\n\n• Use get_schedule_public\n• Show upcoming sessions for that class\n• Include the official GymMaster booking link\n• Keep message short\n\nDate Logic\n\nUnderstand: today, tonight, tomorrow, explicit dates.\n\nShow only upcoming classes (skip past times).\n\nIf unclear:\n\"Did you mean today or another day?\"\n\n5. Memberships & Pricing\n\nUse list_catalog.\n\nShow available options in simple text.\n\nInclude the official GymMaster booking link.\n\n6. Refunds, Complaints, Lost Items\n\nAcknowledge briefly, then escalate using handoff_to_staff.\n\nNever promise refunds or credits.\n\nExample:\n\"Sorry about that. I'll pass this to our team to check for you.\"\n\n7. Lead Capture\n\nUse save_lead when the user gives contact info or requests a callback.\n\nCollect name, phone, and email only when needed.\n\nTone should remain natural and conversational.\n\n8. Location\n\nWhen asked:\nhttps://goo.gl/maps/EvPYZSCs4ZfDXK9x8\n\nNo extra commentary.\n\n9. Privacy & Data\n\nNever ask for passwords or handle payments.\n\nDo not reveal account details.\n\nBookings must go through official GymMaster links.\n\nStore leads only via save_lead.\n\n10. Memory & Context\n\nUse the persistent thread_id per user.\n\nRecognize returning users and continue smoothly.\n\n11. Goals\n\nEach conversation should end with one of these:\n\n• Correct schedule provided\n• Correct pricing provided\n• Booking link for a specific class\n• Lead captured\n• Escalation performed cleanly\n\n12. Success Criteria\n\nShort, precise responses.\n\nDaily = next 5\nFull Day = all classes\nWeekly = one full-day schedule at a time\n\nAlways include a follow-up after ANY schedule:\n\n\"Let me know which day you'd like to see next.\"\n\"Which day are you looking for?\"\n\"Which day are you looking for?\"\n\nBooking links ONLY for specific class requests.\n\nFlow must remain natural and helpful.",
       "tools": [
-        {
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "member_login",
@@ -18,21 +18,21 @@
                 "email": {
                   "type": "string",
                   "description": "Member email address."
-                },
+                "Which day are you looking for?"
                 "password": {
                   "type": "string",
                   "description": "Password if applicable.",
                   "nullable": true
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "email"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "find_or_create_member",
@@ -42,24 +42,24 @@
               "properties": {
                 "email": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "phone": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "name": {
                   "type": "string",
                   "nullable": true
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "email",
                 "phone"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "get_schedule",
@@ -70,25 +70,25 @@
                 "date_from": {
                   "type": "string",
                   "description": "YYYY-MM-DD"
-                },
+                "Which day are you looking for?"
                 "date_to": {
                   "type": "string",
                   "description": "YYYY-MM-DD"
-                },
+                "Which day are you looking for?"
                 "branchId": {
                   "type": "string",
                   "nullable": true
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "date_from",
                 "date_to"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "get_schedule_public",
@@ -99,16 +99,16 @@
                 "date_from": {
                   "type": "string",
                   "description": "YYYY-MM-DD"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "date_from"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "get_class_seats",
@@ -118,16 +118,16 @@
               "properties": {
                 "classId": {
                   "type": "string"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "classId"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "book_class",
@@ -137,20 +137,20 @@
               "properties": {
                 "memberId": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "classId": {
                   "type": "string"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "memberId",
                 "classId"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "cancel_booking",
@@ -160,16 +160,16 @@
               "properties": {
                 "bookingId": {
                   "type": "string"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "bookingId"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "get_member_memberships",
@@ -179,16 +179,16 @@
               "properties": {
                 "memberId": {
                   "type": "string"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "memberId"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "list_catalog",
@@ -198,11 +198,11 @@
               "properties": {},
               "additionalProperties": false,
               "required": []
-            },
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "save_lead",
@@ -212,29 +212,29 @@
               "properties": {
                 "name": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "phone": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "email": {
                   "type": "string"
-                },
+                "Which day are you looking for?"
                 "interest": {
                   "type": "string",
                   "description": "e.g., trial class, membership, PT"
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "name",
                 "phone",
                 "email",
                 "interest"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        },
-        {
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+        "Which day are you looking for?"
           "type": "function",
           "function": {
             "name": "handoff_to_staff",
@@ -245,20 +245,20 @@
                 "summary": {
                   "type": "string",
                   "description": "One-line summary of issue and next step."
-                }
-              },
+                "Which day are you looking for?"
+              "Which day are you looking for?"
               "required": [
                 "summary"
-              ]
-            },
+              "Which day are you looking for?"
+            "Which day are you looking for?"
             "strict": false
-          }
-        }
-      ],
+          "Which day are you looking for?"
+        "Which day are you looking for?"
+      "Which day are you looking for?"
       "top_p": 1.0,
       "temperature": 0.3,
       "reasoning_effort": null,
       "tool_resources": {},
       "metadata": {},
       "response_format": "auto"
-    }
+    "Which day are you looking for?"

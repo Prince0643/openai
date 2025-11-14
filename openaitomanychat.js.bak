@@ -868,7 +868,7 @@ app.post("/make/webhook", async (req, res) => {
           let responseText;
           if (matchingClass) {
             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            responseText = `${matchingClass.name} is at ${classTime}`;
+            responseText = `I found a ${matchingClass.name} class today at ${classTime}`;
             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
             responseText += ".\n\n";
             responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
@@ -1057,7 +1057,7 @@ app.post("/make/webhook", async (req, res) => {
                           
                           if (matchingClass) {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            responseText = `${matchingClass.name} is at ${classTime}`;
+                            responseText = `I found a ${matchingClass.name} class today at ${classTime}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
@@ -1183,7 +1183,7 @@ app.post("/make/webhook", async (req, res) => {
                           
                           if (matchingClass) {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            responseText = `${matchingClass.name} is at ${classTime}`;
+                            responseText = `I found a ${matchingClass.name} class today at ${classTime}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
