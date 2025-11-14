@@ -165,7 +165,172 @@
       "status": "open",
       "assignedTo": null,
       "resolvedAt": null
+    },
+    "TICKET-0012": {
+      "ticketId": "TICKET-0012",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:00:24.767Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0013": {
+      "ticketId": "TICKET-0013",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:00:59.509Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0014": {
+      "ticketId": "TICKET-0014",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:03:27.941Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0015": {
+      "ticketId": "TICKET-0015",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:03:51.720Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0016": {
+      "ticketId": "TICKET-0016",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:04:08.544Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0017": {
+      "ticketId": "TICKET-0017",
+      "userId": "test_user_3",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-14T14:09:02.063Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0018": {
+      "ticketId": "TICKET-0018",
+      "userId": "test_user_5",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_F0qvnrpbpud4XTP31OlajeQh",
+      "createdAt": "2025-11-14T14:09:20.695Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0019": {
+      "ticketId": "TICKET-0019",
+      "userId": "test_user_5",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_F0qvnrpbpud4XTP31OlajeQh",
+      "createdAt": "2025-11-14T14:09:55.291Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0020": {
+      "ticketId": "TICKET-0020",
+      "userId": "test_user_5",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_F0qvnrpbpud4XTP31OlajeQh",
+      "createdAt": "2025-11-14T14:10:21.722Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0021": {
+      "ticketId": "TICKET-0021",
+      "userId": "test_user_5",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_F0qvnrpbpud4XTP31OlajeQh",
+      "createdAt": "2025-11-14T14:10:35.450Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0022": {
+      "ticketId": "TICKET-0022",
+      "userId": "test_user_5",
+      "message": "Do you have any yoga classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "low_confidence",
+      "threadId": "thread_F0qvnrpbpud4XTP31OlajeQh",
+      "createdAt": "2025-11-14T14:12:10.991Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
     }
   },
-  "nextTicketId": 12
+  "nextTicketId": 23
 }

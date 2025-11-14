@@ -842,6 +842,58 @@ app.post("/make/webhook", async (req, res) => {
       return res.status(400).json({ error: true, message: "Message is required" });
     }
     
+    // Check if this is a specific class request that we can handle directly
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('yoga') || lowerMessage.includes('hiit') || lowerMessage.includes('pilates')) {
+      // Handle specific class requests directly without AI escalation
+      try {
+        if (gymMaster) {
+          const today = new Date().toISOString().split('T')[0];
+          const schedule = await gymMaster.getClassSchedule(today);
+          
+          // Look for matching classes
+          let matchingClass = null;
+          for (const classItem of schedule) {
+            const className = classItem.name.toLowerCase();
+            if (
+              (lowerMessage.includes('yoga') && className.includes('yoga')) ||
+              (lowerMessage.includes('hiit') && className.includes('hiit')) ||
+              (lowerMessage.includes('pilates') && className.includes('pilates'))
+            ) {
+              matchingClass = classItem;
+              break;
+            }
+          }
+          
+          let responseText;
+          if (matchingClass) {
+            const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            responseText = `I found a ${matchingClass.name} class today at ${classTime}`;
+            if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
+            responseText += ".\n\n";
+            responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
+          } else {
+            // Provide direct booking link when no matching classes found
+            responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
+          }
+          
+          return res.json({
+            response: responseText,
+            userId: userId,
+            success: true,
+            escalated: false,
+            platform: platform
+          });
+        } else {
+          // Fall back to AI if GymMaster is not configured
+          console.log("GymMaster not configured, falling back to AI processing");
+        }
+      } catch (error) {
+        console.error("Error processing specific class request:", error);
+        // Fall back to AI if there's an error
+      }
+    }
+    
     // Process the message through OpenAI if configured
     if (openai) {
       try {
@@ -962,7 +1014,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\nFollow-up: Which day are you interested in?";
+                            responseText += "\nWhich day would you like to see next?";
                           }
                           break;
                           
@@ -1010,21 +1062,8 @@ app.post("/make/webhook", async (req, res) => {
                             responseText += ".\n\n";
                             responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
                           } else {
-                            // If we can't find a specific match, show today's classes with a general booking link
-                            const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
-                            if (filteredSchedule.length === 0) {
-                              responseText = "No more classes today. Want to see tomorrow's schedule?";
-                            } else {
-                              responseText = "Here are the available classes:";
-                              // Limit to just 2 classes for specific class fallback to keep it concise
-                              const limitedSchedule = filteredSchedule.slice(0, 2);
-                              limitedSchedule.forEach(classItem => {
-                                const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                responseText += `\n${classTime}: ${classItem.name}`;
-                                if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              });
-                              responseText += "\nTo book any of these classes, please visit: https://omni.gymmasteronline.com/portal/account/book/class/schedule";
-                            }
+                            // If we can't find a specific match, provide a direct booking link
+                            responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
                           }
                           break;
                           
@@ -1044,7 +1083,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\nWant to see more classes or another day?";
+                            responseText += "\nWhich day are you interested in?";
                           }
                           break;
                       }
@@ -1101,7 +1140,7 @@ app.post("/make/webhook", async (req, res) => {
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                               responseText += "\n";
                             });
-                            responseText += "\nFollow-up: Which day are you interested in?";
+                            responseText += "\nWhich day would you like to see next?";
                           }
                           break;
                           
@@ -1149,21 +1188,8 @@ app.post("/make/webhook", async (req, res) => {
                             responseText += ".\n\n";
                             responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
                           } else {
-                            // If we can't find a specific match, show today's classes with a general booking link
-                            const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
-                            if (filteredSchedule.length === 0) {
-                              responseText = "No more classes today. Want to see tomorrow's schedule?";
-                            } else {
-                              responseText = "Here are the available classes:";
-                              // Limit to just 2 classes for specific class fallback to keep it concise
-                              const limitedSchedule = filteredSchedule.slice(0, 2);
-                              limitedSchedule.forEach(classItem => {
-                                const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                responseText += `\n${classTime}: ${classItem.name}`;
-                                if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              });
-                              responseText += "\nTo book any of these classes, please visit: https://omni.gymmasteronline.com/portal/account/book/class/schedule";
-                            }
+                            // If we can't find a specific match, provide a direct booking link
+                            responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
                           }
                           break;
                           
@@ -1183,7 +1209,7 @@ app.post("/make/webhook", async (req, res) => {
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` with ${classItem.coach}`;
                             });
-                            responseText += "\nWant to see more classes or another day?";
+                            responseText += "\nWhich day are you interested in?";
                           }
                           break;
                       }
