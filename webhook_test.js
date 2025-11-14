@@ -1,83 +1,46 @@
-import http from 'http';
+import fetch from 'node-fetch';
 
-// Test data for different scenarios
-const testData = {
-  dailyView: {
-    message: "What classes are available today?",
-    userId: "test_user_1",
-    threadId: null
-  },
-  weeklyView: {
-    message: "What's the schedule for this week?",
-    userId: "test_user_2",
-    threadId: null
-  },
-  specificClass: {
-    message: "Do you have any yoga classes today?",
-    userId: "test_user_3",
-    threadId: null
-  },
-  fullDay: {
-    message: "Show me all classes for today",
-    userId: "test_user_4",
-    threadId: null
-  }
-};
-
-// Function to send a test request
-function sendTestRequest(testCase, data) {
-  const postData = JSON.stringify(data);
+async function testWebhook() {
+  const webhookUrl = 'http://localhost:10000/make/webhook';
   
-  const options = {
-    hostname: 'localhost',
-    port: 10000,
-    path: '/make/webhook',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData)
-    }
+  // Test data simulating a specific class request
+  const testData = {
+    message: "I'd like to book a yoga class",
+    userId: "test_user_123",
+    platform: "manychat"
   };
-
-  const req = http.request(options, (res) => {
-    let responseData = '';
+  
+  try {
+    console.log('Testing webhook with specific class request...');
+    console.log('Sending data:', JSON.stringify(testData, null, 2));
     
-    res.on('data', (chunk) => {
-      responseData += chunk;
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testData)
     });
     
-    res.on('end', () => {
-      console.log(`=== ${testCase} Test Response ===`);
-      console.log(`Status: ${res.statusCode}`);
-      console.log(`Response: ${responseData}`);
-      console.log('================================\n');
-    });
-  });
-
-  req.on('error', (error) => {
-    console.error(`Error in ${testCase} test:`, error.message);
-  });
-
-  req.write(postData);
-  req.end();
+    const result = await response.json();
+    console.log('Webhook response:', JSON.stringify(result, null, 2));
+    
+    // Check if booking link is correctly formed
+    if (result.response && result.response.includes('classId=')) {
+      console.log('✅ SUCCESS: Booking link found in response');
+      if (result.response.includes('classId=undefined')) {
+        console.log('❌ FAILURE: Booking link contains undefined classId');
+      } else {
+        console.log('✅ SUCCESS: Booking link contains valid classId');
+      }
+    } else {
+      console.log('⚠️  WARNING: No booking link found in response');
+    }
+    
+  } catch (error) {
+    console.error('Error testing webhook:', error);
+  }
 }
 
-// Run tests
-console.log('Testing webhook responses...\n');
-
-// Wait a bit between tests to avoid conflicts
-setTimeout(() => {
-  sendTestRequest('Daily View', testData.dailyView);
-}, 1000);
-
-setTimeout(() => {
-  sendTestRequest('Weekly View', testData.weeklyView);
-}, 2000);
-
-setTimeout(() => {
-  sendTestRequest('Specific Class', testData.specificClass);
-}, 3000);
-
-setTimeout(() => {
-  sendTestRequest('Full Day', testData.fullDay);
-}, 4000);
+// Run the test
+testWebhook();

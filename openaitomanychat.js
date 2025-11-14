@@ -871,7 +871,12 @@ app.post("/make/webhook", async (req, res) => {
             responseText = `${matchingClass.name} is at ${classTime}`;
             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
             responseText += ".\n\n";
-            responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
+            // Use classId if available, otherwise fallback to general booking link
+            if (matchingClass.classId) {
+              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
+            } else {
+              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+            }
           } else {
             // Provide direct booking link when no matching classes found
             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
@@ -1060,7 +1065,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = `${matchingClass.name} is at ${classTime}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
-                            responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
+                            // Use classId if available, otherwise fallback to general booking link
+                                                        if (matchingClass.classId) {
+                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
+                                                        } else {
+                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+                                                        }
                           } else {
                             // If we can't find a specific match, provide a direct booking link
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
@@ -1186,7 +1196,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = `${matchingClass.name} is at ${classTime}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
-                            responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.id}`;
+                            // Use classId if available, otherwise fallback to general booking link
+                                                        if (matchingClass.classId) {
+                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
+                                                        } else {
+                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+                                                        }
                           } else {
                             // If we can't find a specific match, provide a direct booking link
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
