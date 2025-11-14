@@ -474,141 +474,22 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           let responseText = "";
           
           switch (viewType) {
-            case 'weekly':
-              // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
-              responseText = "Here's today's schedule:";
-              const dailySchedule = filterAndLimitDailySchedule(schedule, week);
-              if (dailySchedule.length === 0) {
-                responseText = "No more classes today. Want to see tomorrow's schedule?";
-              } else {
-                // Limit to just 2 classes for weekly view to keep it concise
-                const limitedSchedule = dailySchedule.slice(0, 2);
-                limitedSchedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                });
-                responseText += "\nWhich day are you looking for?";
-              }
-              break;
-              
-            case 'full_day':
-              // For full day view, show all classes for the day
-              if (schedule.length === 0) {
-                responseText = "No classes scheduled for today.";
-              } else {
-                responseText = "Here are all classes for today:\n";
-                schedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
-                });
-              }
-              break;
-              
-            case 'specific_class':
-              // For specific class view, we would include booking link in the assistant response
-              responseText = "I can help you book that class. Let me check the available times for you.";
-              break;
-              
             case 'daily':
-            default:
-              // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
-              const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
+              // Filter schedule for today and limit to next 2 classes
+              const today = new Date();
+              const todayStr = today.toISOString().split('T')[0];
+              const filteredSchedule = schedule.filter(classItem => {
+                const classDate = new Date(classItem.start);
+                return classDate.toDateString() === today.toDateString();
+              });
+              
+              // Sort classes by time
+              filteredSchedule.sort((a, b) => new Date(a.start) - new Date(b.start));
               
               if (filteredSchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
-                responseText = "Here are the available classes:";
-                // Limit to just 2 classes for daily view to keep it concise
-                const limitedSchedule = filteredSchedule.slice(0, 2);
-                limitedSchedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                });
-                responseText += "\nWhich day are you looking for?";
-              }
-              break;
-          }
-          
-          return res.json({ message: responseText });
-        } catch (e) {
-          console.error("GymMaster API error:", e);
-          return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
-        }
-        
-      case "get_schedule":
-        // This requires authentication, so we would need to implement token handling
-        if (!gymMaster) {
-          return res.status(500).json({ error: true, message: "GymMaster API not configured" });
-        }
-        try {
-          console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
-          
-          // Use date_from or default to current date
-          const week = tool_args.date_from || new Date().toISOString().split('T')[0];
-          
-          const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
-          console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
-          
-          // Determine the view type based on a mock message (since we don't have access to the actual user message here)
-          // In a real implementation, you would pass the user message to this endpoint
-          const viewType = 'daily'; // Default to daily view for direct calls
-          
-          // Format response based on view type
-          let responseText = "";
-          
-          switch (viewType) {
-            case 'weekly':
-              // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
-              responseText = "Here's today's schedule:";
-              const dailySchedule = filterAndLimitDailySchedule(schedule, week);
-              if (dailySchedule.length === 0) {
-                responseText = "No more classes today. Want to see tomorrow's schedule?";
-              } else {
-                // Limit to just 2 classes for weekly view to keep it concise
-                const limitedSchedule = dailySchedule.slice(0, 2);
-                limitedSchedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                });
-                responseText += "\nWhich day are you interested in?";
-              }
-              break;
-              
-            case 'full_day':
-              // For full day view, show all classes for the day
-              if (schedule.length === 0) {
-                responseText = "No classes scheduled for today.";
-              } else {
-                responseText = "Here are all classes for today:\n";
-                schedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                  responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                  responseText += "\n";
-                });
-              }
-              break;
-              
-            case 'specific_class':
-              // For specific class view, we would include booking link in the assistant response
-              responseText = "I can help you book that class. Let me check the available times for you.";
-              break;
-              
-            case 'daily':
-            default:
-              // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
-              const filteredSchedule = filterAndLimitDailySchedule(schedule, week);
-              
-              if (filteredSchedule.length === 0) {
-                responseText = "No more classes today. Want to see tomorrow's schedule?";
-              } else {
-                responseText = "Here are the available classes:";
-                // Limit to just 2 classes for daily view to keep it concise
+                responseText = "Here are the next available classes:";
                 const limitedSchedule = filteredSchedule.slice(0, 2);
                 limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -617,6 +498,37 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 });
                 responseText += "\nWant to see more classes or another day?";
               }
+              break;
+              
+            case 'full_day':
+              // Group classes by time periods and format response
+              const timeGroups = groupClassesByTimePeriod(schedule);
+              responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
+              responseText += "\n\nWant to see another day?";
+              break;
+              
+            case 'weekly':
+              // For weekly view, show a message asking which day they want to see
+              responseText = "I can show you the schedule for any day this week. Which day would you like to see?";
+              break;
+              
+            case 'specific_class':
+              // For specific class requests, show all instances of that class
+              responseText = "Here are the upcoming sessions:";
+              schedule.forEach(classItem => {
+                const classTime = new Date(classItem.start).toLocaleDateString([], {weekday: 'long', month: 'short', day: 'numeric'});
+                const classHour = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                responseText += `\n${classTime} at ${classHour}: ${classItem.name}`;
+                if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                
+                // Use classId if available, otherwise fallback to general booking link
+                if (classItem.classId) {
+                  responseText += `\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${classItem.classId}`;
+                } else {
+                  responseText += `\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+                }
+                responseText += "\n";
+              });
               break;
           }
           
@@ -1024,17 +936,12 @@ app.post("/make/webhook", async (req, res) => {
                           break;
                           
                         case 'full_day':
-                          // For full day view, show all classes for the day
+                          // For full day view, show all classes for the day grouped by time periods
                           if (schedule.length === 0) {
                             responseText = "No classes scheduled for today.";
                           } else {
-                            responseText = "Here are all classes for today:\n";
-                            schedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              responseText += "\n";
-                            });
+                            const timeGroups = groupClassesByTimePeriod(schedule);
+                            responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
                           }
                           break;
                           
@@ -1155,17 +1062,12 @@ app.post("/make/webhook", async (req, res) => {
                           break;
                           
                         case 'full_day':
-                          // For full day view, show all classes for the day
+                          // For full day view, show all classes for the day grouped by time periods
                           if (schedule.length === 0) {
                             responseText = "No classes scheduled for today.";
                           } else {
-                            responseText = "Here are all classes for today:\n";
-                            schedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                              responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
-                              responseText += "\n";
-                            });
+                            const timeGroups = groupClassesByTimePeriod(schedule);
+                            responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
                           }
                           break;
                           
@@ -1705,6 +1607,77 @@ function determineScheduleViewType(userMessage) {
   
   // DAILY VIEW (default)
   return 'daily';
+}
+
+/**
+ * Group classes by time periods (morning, afternoon, evening)
+ * @param {Array} schedule - Array of class items
+ * @returns {Object} - Grouped classes by time period
+ */
+function groupClassesByTimePeriod(schedule) {
+  const timeGroups = {
+    morning: [],
+    afternoon: [],
+    evening: []
+  };
+  
+  schedule.forEach(classItem => {
+    const classTime = new Date(classItem.start);
+    const hour = classTime.getHours();
+    
+    if (hour >= 5 && hour < 12) {
+      timeGroups.morning.push(classItem);
+    } else if (hour >= 12 && hour < 18) {
+      timeGroups.afternoon.push(classItem);
+    } else {
+      timeGroups.evening.push(classItem);
+    }
+  });
+  
+  // Sort each group by time
+  Object.keys(timeGroups).forEach(period => {
+    timeGroups[period].sort((a, b) => new Date(a.start) - new Date(b.start));
+  });
+  
+  return timeGroups;
+}
+
+/**
+ * Format grouped classes for full day view
+ * @param {Object} timeGroups - Classes grouped by time period
+ * @returns {string} - Formatted response text
+ */
+function formatGroupedClasses(timeGroups) {
+  let responseText = "";
+  
+  if (timeGroups.morning.length > 0) {
+    responseText += "\n\nMORNING\n";
+    timeGroups.morning.forEach(classItem => {
+      const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      responseText += `\n${classTime}: ${classItem.name}`;
+      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+    });
+  }
+  
+  if (timeGroups.afternoon.length > 0) {
+    responseText += "\n\nAFTERNOON\n";
+    timeGroups.afternoon.forEach(classItem => {
+      const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      responseText += `\n${classTime}: ${classItem.name}`;
+      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+    });
+  }
+  
+  if (timeGroups.evening.length > 0) {
+    responseText += "\n\nEVENING\n";
+    timeGroups.evening.forEach(classItem => {
+      const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      responseText += `\n${classTime}: ${classItem.name}`;
+      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+    });
+  }
+  
+  return responseText;
 }
 
 /**
