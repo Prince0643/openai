@@ -1592,6 +1592,7 @@ function determineScheduleViewType(userMessage) {
   if (lowerMessage.includes('full day') || 
       lowerMessage.includes('all classes') || 
       lowerMessage.includes('entire day') || 
+      lowerMessage.includes('full') || 
       lowerMessage.includes('whole day')) {
     return 'full_day';
   }
