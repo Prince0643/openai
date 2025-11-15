@@ -192,28 +192,8 @@ function handleFallback(userId, message, responseText, threadId) {
   
   // Format the response according to the new instructions:
   // - Plain text only
-  // - Maximum of four short lines for general responses
-  // - More lines allowed for schedule responses
+  // - No line limitations
   let formattedResponse = responseText;
-  
-  // Check if this is a schedule response that should not be truncated
-  if (!isScheduleResponse(responseText)) {
-    // If the response is too long, try to shorten it (for non-schedule responses)
-    if (formattedResponse.split('\n').length > 4) {
-      const lines = formattedResponse.split('\n');
-      formattedResponse = lines.slice(0, 4).join('\n');
-    }
-  } else {
-    // For schedule responses, allow up to 7 lines to accommodate:
-    // - Header line
-    // - Up to 2 class lines
-    // - Follow-up question line
-    // - Extra spacing if needed
-    if (formattedResponse.split('\n').length > 7) {
-      const lines = formattedResponse.split('\n');
-      formattedResponse = lines.slice(0, 7).join('\n');
-    }
-  }
   
   // If we get here, the response seems reasonable
   return {

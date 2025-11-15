@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import OpenAI from "openai";
@@ -21,7 +21,6 @@ import {
   isAskingAboutRefunds, 
   handleRefundInquiry 
 } from "./refundsGuardrail.js";
-import { scheduleWatiBroadcast } from "./watiBroadcast.js";
 
 // Load environment variables
 const dotenvResult = dotenv.config();
@@ -1529,6 +1528,7 @@ app.get("/broadcast/status", requireBackendKey, async (req, res) => {
 });
 
 // New endpoint: Send broadcast via Wati API
+import { scheduleWatiBroadcast } from "./watiBroadcast.js";
 app.post("/broadcast/wati/send", requireBackendKey, scheduleWatiBroadcast);
 
 const PORT = config.PORT;
@@ -1712,9 +1712,7 @@ function formatGroupedClasses(timeGroups) {
   if (timeGroups.morning.length > 0) {
     responseText += "\n\nMORNING\n";
     const groupedMorning = groupConsecutiveClasses(timeGroups.morning);
-    // Limit to 3 classes per time group
-    const limitedMorning = groupedMorning.slice(0, 3);
-    limitedMorning.forEach(classItem => {
+    groupedMorning.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1735,9 +1733,7 @@ function formatGroupedClasses(timeGroups) {
   if (timeGroups.afternoon.length > 0) {
     responseText += "\n\nAFTERNOON\n";
     const groupedAfternoon = groupConsecutiveClasses(timeGroups.afternoon);
-    // Limit to 3 classes per time group
-    const limitedAfternoon = groupedAfternoon.slice(0, 3);
-    limitedAfternoon.forEach(classItem => {
+    groupedAfternoon.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1758,12 +1754,43 @@ function formatGroupedClasses(timeGroups) {
   if (timeGroups.evening.length > 0) {
     responseText += "\n\nEVENING\n";
     const groupedEvening = groupConsecutiveClasses(timeGroups.evening);
-    // Limit to 3 classes per time group
-    const limitedEvening = groupedEvening.slice(0, 3);
-    limitedEvening.forEach(classItem => {
+    groupedEvening.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        // If start and end times are the same, just show the start time
+        if (startTime === endTime) {
+          responseText += `\n${startTime}: ${classItem.name}`;
+        } else {
+          responseText += `\n${startTime} - ${endTime}: ${classItem.name}`;
+        }
+      } else {
+        const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        responseText += `\n${classTime}: ${classItem.name}`;
+      }
+      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+    });
+  }
+  
+  return responseText;
+}
+
+/**
+ * Format tool response as plain text
+ * @param {string} responseText - The response text to format
+ * @returns {Object} - Formatted response object
+ */
+function formatToolResponse(responseText) {
+  return { message: responseText };
+}
+
+      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+    });
+  }
+  
+  return responseText;
+}
+
         // If start and end times are the same, just show the start time
         if (startTime === endTime) {
           responseText += `\n${startTime}: ${classItem.name}`;
