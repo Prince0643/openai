@@ -1,4 +1,4 @@
-import http from 'http';
+const http = require('http');
 
 // Function to send a test request
 function sendTestRequest(testCase, messageText) {

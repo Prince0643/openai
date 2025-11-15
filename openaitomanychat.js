@@ -774,6 +774,7 @@ app.post("/make/webhook", async (req, res) => {
           else if (lowerMessage.includes('strength')) className = "strength";
           
           // Use our findNextSpecificClass function to get the next available class
+          let matchingClass = null;
           if (className) {
             matchingClass = findNextSpecificClass(schedule, className);
           }
