@@ -774,7 +774,6 @@ app.post("/make/webhook", async (req, res) => {
           else if (lowerMessage.includes('strength')) className = "strength";
           
           // Use our findNextSpecificClass function to get the next available class
-          let matchingClass = null;
           if (className) {
             matchingClass = findNextSpecificClass(schedule, className);
           }
@@ -782,7 +781,8 @@ app.post("/make/webhook", async (req, res) => {
           let responseText;
           if (matchingClass) {
             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            responseText = `${matchingClass.name} is at ${classTime}`;
+            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+            responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
             responseText += ".\n\n";
             // Use classId if available, otherwise fallback to general booking link
@@ -967,7 +967,8 @@ app.post("/make/webhook", async (req, res) => {
                           
                           if (matchingClass) {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            responseText = `${matchingClass.name} is at ${classTime} tomorrow.`;
+                            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+                            responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
@@ -1090,7 +1091,8 @@ app.post("/make/webhook", async (req, res) => {
                           
                           if (matchingClass) {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            responseText = `${matchingClass.name} is at ${classTime}`;
+                            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+                            responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
