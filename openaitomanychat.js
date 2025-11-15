@@ -757,25 +757,26 @@ app.post("/make/webhook", async (req, res) => {
     
     // Check if this is a specific class request that we can handle directly
     const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes('yoga') || lowerMessage.includes('hiit') || lowerMessage.includes('pilates')) {
+    if (lowerMessage.includes('yoga') || lowerMessage.includes('hiit') || lowerMessage.includes('pilates') || lowerMessage.includes('spin') || lowerMessage.includes('handstands') || lowerMessage.includes('strength')) {
       // Handle specific class requests directly without AI escalation
       try {
         if (gymMaster) {
           const today = new Date().toISOString().split('T')[0];
           const schedule = await gymMaster.getClassSchedule(today);
           
-          // Look for matching classes
+          // Determine which class type the user is asking about
+          let className = "";
+          if (lowerMessage.includes('yoga')) className = "yoga";
+          else if (lowerMessage.includes('hiit')) className = "hiit";
+          else if (lowerMessage.includes('spin')) className = "spin";
+          else if (lowerMessage.includes('pilates')) className = "pilates";
+          else if (lowerMessage.includes('handstands')) className = "handstands";
+          else if (lowerMessage.includes('strength')) className = "strength";
+          
+          // Use our findNextSpecificClass function to get the next available class
           let matchingClass = null;
-          for (const classItem of schedule) {
-            const className = classItem.name.toLowerCase();
-            if (
-              (lowerMessage.includes('yoga') && className.includes('yoga')) ||
-              (lowerMessage.includes('hiit') && className.includes('hiit')) ||
-              (lowerMessage.includes('pilates') && className.includes('pilates'))
-            ) {
-              matchingClass = classItem;
-              break;
-            }
+          if (className) {
+            matchingClass = findNextSpecificClass(schedule, className);
           }
           
           let responseText;
@@ -946,38 +947,35 @@ app.post("/make/webhook", async (req, res) => {
                           break;
                           
                         case 'specific_class':
-                          // For specific class view, find the class and provide a booking link
-                          // First, try to find a class that matches the user's request
+                          // For specific class view, find the next class and provide a booking link
                           let matchingClass = null;
                           const lowerMessage = message.toLowerCase();
                           
-                          // Look for specific class types in the schedule
-                          for (const classItem of schedule) {
-                            const className = classItem.name.toLowerCase();
-                            if (
-                              (lowerMessage.includes('yoga') && className.includes('yoga')) ||
-                              (lowerMessage.includes('hiit') && className.includes('hiit')) ||
-                              (lowerMessage.includes('spin') && className.includes('spin')) ||
-                              (lowerMessage.includes('pilates') && className.includes('pilates')) ||
-                              (lowerMessage.includes('handstands') && className.includes('handstands')) ||
-                              (lowerMessage.includes('strength') && className.includes('strength'))
-                            ) {
-                              matchingClass = classItem;
-                              break;
-                            }
+                          // Determine which class type the user is asking about
+                          let className = "";
+                          if (lowerMessage.includes('yoga')) className = "yoga";
+                          else if (lowerMessage.includes('hiit')) className = "hiit";
+                          else if (lowerMessage.includes('spin')) className = "spin";
+                          else if (lowerMessage.includes('pilates')) className = "pilates";
+                          else if (lowerMessage.includes('handstands')) className = "handstands";
+                          else if (lowerMessage.includes('strength')) className = "strength";
+                          
+                          // Use our findNextSpecificClass function to get the next available class
+                          if (className) {
+                            matchingClass = findNextSpecificClass(schedule, className);
                           }
                           
                           if (matchingClass) {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            responseText = `${matchingClass.name} is at ${classTime}`;
+                            responseText = `${matchingClass.name} is at ${classTime} tomorrow`;
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
-                                                        if (matchingClass.classId) {
-                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
-                                                        } else {
-                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
-                                                        }
+                            if (matchingClass.classId) {
+                              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
+                            } else {
+                              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+                            }
                           } else {
                             // If we can't find a specific match, provide a direct booking link
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
@@ -1072,25 +1070,22 @@ app.post("/make/webhook", async (req, res) => {
                           break;
                           
                         case 'specific_class':
-                          // For specific class view, find the class and provide a booking link
-                          // First, try to find a class that matches the user's request
+                          // For specific class view, find the next class and provide a booking link
                           let matchingClass = null;
                           const lowerMessage = message.toLowerCase();
                           
-                          // Look for specific class types in the schedule
-                          for (const classItem of schedule) {
-                            const className = classItem.name.toLowerCase();
-                            if (
-                              (lowerMessage.includes('yoga') && className.includes('yoga')) ||
-                              (lowerMessage.includes('hiit') && className.includes('hiit')) ||
-                              (lowerMessage.includes('spin') && className.includes('spin')) ||
-                              (lowerMessage.includes('pilates') && className.includes('pilates')) ||
-                              (lowerMessage.includes('handstands') && className.includes('handstands')) ||
-                              (lowerMessage.includes('strength') && className.includes('strength'))
-                            ) {
-                              matchingClass = classItem;
-                              break;
-                            }
+                          // Determine which class type the user is asking about
+                          let className = "";
+                          if (lowerMessage.includes('yoga')) className = "yoga";
+                          else if (lowerMessage.includes('hiit')) className = "hiit";
+                          else if (lowerMessage.includes('spin')) className = "spin";
+                          else if (lowerMessage.includes('pilates')) className = "pilates";
+                          else if (lowerMessage.includes('handstands')) className = "handstands";
+                          else if (lowerMessage.includes('strength')) className = "strength";
+                          
+                          // Use our findNextSpecificClass function to get the next available class
+                          if (className) {
+                            matchingClass = findNextSpecificClass(schedule, className);
                           }
                           
                           if (matchingClass) {
@@ -1099,11 +1094,11 @@ app.post("/make/webhook", async (req, res) => {
                             if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
-                                                        if (matchingClass.classId) {
-                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
-                                                        } else {
-                                                          responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
-                                                        }
+                            if (matchingClass.classId) {
+                              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${matchingClass.classId}`;
+                            } else {
+                              responseText += `Please use the link below to complete your booking:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule`;
+                            }
                           } else {
                             // If we can't find a specific match, provide a direct booking link
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
@@ -1610,6 +1605,33 @@ function determineScheduleViewType(userMessage) {
 }
 
 /**
+ * Group consecutive classes with the same name and summarize their time ranges
+ * @param {Array} classes - Array of class items
+ * @returns {Array} - Array of grouped class items with time ranges
+ */
+function groupConsecutiveClasses(classes) {
+  const grouped = [];
+  let currentGroup = null;
+
+  classes.forEach(classItem => {
+    if (currentGroup && currentGroup.name === classItem.name) {
+      currentGroup.end = classItem.end;
+    } else {
+      if (currentGroup) {
+        grouped.push(currentGroup);
+      }
+      currentGroup = { ...classItem };
+    }
+  });
+
+  if (currentGroup) {
+    grouped.push(currentGroup);
+  }
+
+  return grouped;
+}
+
+/**
  * Group classes by time periods (morning, afternoon, evening)
  * @param {Array} schedule - Array of class items
  * @returns {Object} - Grouped classes by time period
@@ -1643,63 +1665,55 @@ function groupClassesByTimePeriod(schedule) {
 }
 
 /**
- * Group consecutive classes with the same name and summarize their time ranges
- * @param {Array} classes - Array of class items
- * @returns {Array} - Array of grouped class items with time ranges
+ * Find the next specific class in the schedule
+ * @param {Array} schedule - Array of class items
+ * @param {string} className - The class name to search for
+ * @returns {Object|null} - The next class object or null if not found
  */
-function groupConsecutiveClasses(classes) {
-  if (!classes || classes.length === 0) return [];
+function findNextSpecificClass(schedule, className) {
+  const lowerClassName = className.toLowerCase();
+  const now = new Date();
   
-  const grouped = [];
-  let currentGroup = {
-    ...classes[0],
-    startTime: new Date(classes[0].start),
-    endTime: new Date(classes[0].start)
-  };
+  // Filter classes that match the requested class name
+  const matchingClasses = schedule.filter(classItem => {
+    const classItemName = classItem.name.toLowerCase();
+    return classItemName.includes(lowerClassName);
+  });
   
-  // Set end time based on class duration if available, otherwise assume 1 hour
-  if (classes[0].endtime) {
-    currentGroup.endTime = new Date(classes[0].start.split('T')[0] + 'T' + classes[0].endtime);
-  } else {
-    currentGroup.endTime = new Date(currentGroup.startTime.getTime() + 60 * 60 * 1000);
+  // Filter out past classes for today
+  const upcomingClasses = matchingClasses.filter(classItem => {
+    const classTime = new Date(classItem.start);
+    return classTime > now;
+  });
+  
+  // Sort by start time
+  upcomingClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
+  
+  // If we have upcoming classes today, return the first one
+  if (upcomingClasses.length > 0) {
+    return upcomingClasses[0];
   }
   
-  for (let i = 1; i < classes.length; i++) {
-    const currentClass = classes[i];
-    const previousClass = classes[i-1];
-    
-    // Check if current class has the same name as the previous one
-    if (currentClass.name === previousClass.name) {
-      // Extend the end time of the current group
-      if (currentClass.endtime) {
-        currentGroup.endTime = new Date(currentClass.start.split('T')[0] + 'T' + currentClass.endtime);
-      } else {
-        currentGroup.endTime = new Date(new Date(currentClass.start).getTime() + 60 * 60 * 1000);
-      }
-    } else {
-      // Different class name, save the current group and start a new one
-      grouped.push(currentGroup);
-      
-      currentGroup = {
-        ...currentClass,
-        startTime: new Date(currentClass.start),
-        endTime: new Date(currentClass.start)
-      };
-      
-      // Set end time based on class duration if available, otherwise assume 1 hour
-      if (currentClass.endtime) {
-        currentGroup.endTime = new Date(currentClass.start.split('T')[0] + 'T' + currentClass.endtime);
-      } else {
-        currentGroup.endTime = new Date(currentGroup.startTime.getTime() + 60 * 60 * 1000);
-      }
-    }
-  }
+  // If no upcoming classes today, look for tomorrow's classes
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
   
-  // Don't forget to add the last group
-  grouped.push(currentGroup);
+  const tomorrowClasses = matchingClasses.filter(classItem => {
+    const classDate = new Date(classItem.start).toISOString().split('T')[0];
+    return classDate === tomorrowStr;
+  });
   
-  return grouped;
+  // Sort tomorrow's classes by start time
+  tomorrowClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
+  
+  // Return the first class tomorrow, or null if none
+  return tomorrowClasses.length > 0 ? tomorrowClasses[0] : null;
 }
+
+
+
+
 
 /**
  * Format grouped classes for full day view

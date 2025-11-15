@@ -1,12 +1,17 @@
-const http = require('http');
+import http from 'http';
 
 // Function to send a test request
-function sendTestRequest(testCase, data) {
-  const postData = JSON.stringify(data);
+function sendTestRequest(testCase, messageText) {
+  const postData = JSON.stringify({
+    message: messageText,
+    sender: {
+      id: "test_user_3"
+    }
+  });
   
   const options = {
     hostname: 'localhost',
-    port: 10001,
+    port: 10000,
     path: '/make/webhook',
     method: 'POST',
     headers: {
@@ -38,8 +43,5 @@ function sendTestRequest(testCase, data) {
   req.end();
 }
 
-// Test yoga class request (should provide booking link now)
-sendTestRequest('Yoga Class Request', {
-  message: "Do you have any yoga classes today?",
-  userId: "test_user_5"
-});
+// Test pilates class request
+sendTestRequest('Pilates Class Request', "when's your next pilates class?");
