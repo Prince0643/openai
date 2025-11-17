@@ -142,22 +142,72 @@ class FAQManager {
                              (lowerUserQuestion.includes('have') && lowerUserQuestion.includes('plan'));
     
     if (isMembershipQuery) {
-      // Look for membership-related FAQs with higher priority
+      // First, try to find a more specific match based on question type
+      let bestMembershipMatch = null;
+      let bestMembershipSimilarity = 0;
+      
+      // Check for specific types of membership questions
+      const isAvailabilityQuery = lowerUserQuestion.includes('have') || 
+                                 lowerUserQuestion.includes('offer') || 
+                                 lowerUserQuestion.includes('available') ||
+                                 lowerUserQuestion.includes('provide');
+      
+      const isUpgradeQuery = lowerUserQuestion.includes('upgrade') || 
+                            lowerUserQuestion.includes('change') || 
+                            lowerUserQuestion.includes('switch') ||
+                            lowerUserQuestion.includes('update');
+      
+      const isPricingQuery = lowerUserQuestion.includes('cost') || 
+                            lowerUserQuestion.includes('price') || 
+                            lowerUserQuestion.includes('much') ||
+                            lowerUserQuestion.includes('how much');
+      
       for (const faq of faqs) {
         if (faq.question) {
           const lowerFAQQuestion = faq.question.toLowerCase();
-          if (lowerFAQQuestion.includes('membership') || 
-              lowerFAQQuestion.includes('plan') ||
-              lowerFAQQuestion.includes('monthly') ||
-              lowerFAQQuestion.includes('yearly') ||
-              lowerFAQQuestion.includes('annual')) {
-            // Calculate similarity for membership-related questions with a lower threshold
-            const similarity = this.calculateSimilarity(userQuestion, faq.question);
-            if (similarity >= 0.5) { // Lower threshold for membership queries
-              return faq;
+          const faqIsAboutMembership = lowerFAQQuestion.includes('membership') || 
+                                      lowerFAQQuestion.includes('plan') ||
+                                      lowerFAQQuestion.includes('monthly') ||
+                                      lowerFAQQuestion.includes('yearly') ||
+                                      lowerFAQQuestion.includes('annual');
+          
+          if (faqIsAboutMembership) {
+            // Boost similarity score for matching question types
+            let similarity = this.calculateSimilarity(userQuestion, faq.question);
+            
+            // Increase similarity if question types match
+            if (isAvailabilityQuery && (lowerFAQQuestion.includes('available') || 
+                                       lowerFAQQuestion.includes('offer') || 
+                                       lowerFAQQuestion.includes('have'))) {
+              similarity += 0.2; // Boost for availability queries
+            }
+            
+            if (isUpgradeQuery && (lowerFAQQuestion.includes('upgrade') || 
+                                  lowerFAQQuestion.includes('change') || 
+                                  lowerFAQQuestion.includes('switch'))) {
+              similarity += 0.2; // Boost for upgrade queries
+            }
+            
+            if (isPricingQuery && (lowerFAQQuestion.includes('cost') || 
+                                  lowerFAQQuestion.includes('price') || 
+                                  lowerFAQQuestion.includes('much'))) {
+              similarity += 0.2; // Boost for pricing queries
+            }
+            
+            // Cap similarity at 1.0
+            similarity = Math.min(similarity, 1.0);
+            
+            if (similarity > bestMembershipSimilarity && similarity >= 0.5) {
+              bestMembershipSimilarity = similarity;
+              bestMembershipMatch = faq;
             }
           }
         }
+      }
+      
+      // If we found a good membership match, return it
+      if (bestMembershipMatch && bestMembershipSimilarity >= 0.5) {
+        return bestMembershipMatch;
       }
     }
     
