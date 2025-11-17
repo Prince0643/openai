@@ -132,6 +132,35 @@ class FAQManager {
       }
     }
     
+    // Special handling for membership-related queries
+    // Check if user is asking about memberships and find any membership-related FAQ
+    const lowerUserQuestion = userQuestion.toLowerCase();
+    const isMembershipQuery = lowerUserQuestion.includes('membership') || 
+                             lowerUserQuestion.includes('monthly') || 
+                             lowerUserQuestion.includes('yearly') || 
+                             lowerUserQuestion.includes('annual') ||
+                             (lowerUserQuestion.includes('have') && lowerUserQuestion.includes('plan'));
+    
+    if (isMembershipQuery) {
+      // Look for membership-related FAQs with higher priority
+      for (const faq of faqs) {
+        if (faq.question) {
+          const lowerFAQQuestion = faq.question.toLowerCase();
+          if (lowerFAQQuestion.includes('membership') || 
+              lowerFAQQuestion.includes('plan') ||
+              lowerFAQQuestion.includes('monthly') ||
+              lowerFAQQuestion.includes('yearly') ||
+              lowerFAQQuestion.includes('annual')) {
+            // Calculate similarity for membership-related questions with a lower threshold
+            const similarity = this.calculateSimilarity(userQuestion, faq.question);
+            if (similarity >= 0.5) { // Lower threshold for membership queries
+              return faq;
+            }
+          }
+        }
+      }
+    }
+    
     // Then try high similarity matches (>= 0.7)
     let bestMatch = null;
     let bestSimilarity = 0;
@@ -156,6 +185,32 @@ class FAQManager {
           if (lowerUserQuestion.includes(lowerFAQQuestion) || 
               lowerFAQQuestion.includes(lowerUserQuestion)) {
             return faq;
+          }
+        }
+      }
+    }
+    
+    // Additional fuzzy matching for common variations
+    if (!bestMatch && isMembershipQuery) {
+      for (const faq of faqs) {
+        if (faq.question) {
+          const lowerFAQQuestion = faq.question.toLowerCase();
+          const hasMembershipKeywords = lowerFAQQuestion.includes('membership') || 
+                                       lowerFAQQuestion.includes('plan') ||
+                                       lowerFAQQuestion.includes('monthly') ||
+                                       lowerFAQQuestion.includes('yearly') ||
+                                       lowerFAQQuestion.includes('annual');
+          
+          if (hasMembershipKeywords) {
+            // Even if similarity is low, if both are membership-related, consider it a match
+            const userWords = normalizedUserQuestion.split(/\s+/);
+            const faqWords = this.normalizeText(lowerFAQQuestion).split(/\s+/);
+            const commonWords = userWords.filter(word => faqWords.includes(word));
+            
+            // If they share significant keywords, consider it a match
+            if (commonWords.length >= 2) {
+              return faq;
+            }
           }
         }
       }
