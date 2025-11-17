@@ -330,7 +330,157 @@
       "status": "open",
       "assignedTo": null,
       "resolvedAt": null
+    },
+    "TICKET-0023": {
+      "ticketId": "TICKET-0023",
+      "userId": "test_user_3",
+      "message": "Refund/credit inquiry: What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-17T00:16:00.711Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0024": {
+      "ticketId": "TICKET-0024",
+      "userId": "test_user_3",
+      "message": "Refund/credit inquiry: What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-17T00:16:15.946Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0025": {
+      "ticketId": "TICKET-0025",
+      "userId": "test_user_3",
+      "message": "Refund/credit inquiry: What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-17T00:16:45.308Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0026": {
+      "ticketId": "TICKET-0026",
+      "userId": "test_user_3",
+      "message": "Refund/credit inquiry: What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-17T00:19:56.151Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0027": {
+      "ticketId": "TICKET-0027",
+      "userId": "test_user_3",
+      "message": "Refund/credit inquiry: What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "refund_inquiry",
+      "threadId": "thread_mLgsu4jcH2kVF3c6wKNg8Ks9",
+      "createdAt": "2025-11-17T00:20:08.976Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0028": {
+      "ticketId": "TICKET-0028",
+      "userId": "test_user_3",
+      "message": "What is your refund policy?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "unanswered_faq",
+      "threadId": null,
+      "createdAt": "2025-11-17T00:21:55.932Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0029": {
+      "ticketId": "TICKET-0029",
+      "userId": "test_user_booking_1",
+      "message": "I'd like to book a yoga class",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "unanswered_faq",
+      "threadId": null,
+      "createdAt": "2025-11-17T00:23:44.236Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0030": {
+      "ticketId": "TICKET-0030",
+      "userId": "test_user_booking_2",
+      "message": "Do you have any HIIT classes today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "unanswered_faq",
+      "threadId": null,
+      "createdAt": "2025-11-17T00:23:44.252Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0031": {
+      "ticketId": "TICKET-0031",
+      "userId": "test_user_schedule_1",
+      "message": "Can you show me the class schedule for today?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "unanswered_faq",
+      "threadId": null,
+      "createdAt": "2025-11-17T00:23:44.263Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
+    },
+    "TICKET-0032": {
+      "ticketId": "TICKET-0032",
+      "userId": "test_user_booking_3",
+      "message": "When is the next spin class?",
+      "contactInfo": {
+        "email": "not_provided",
+        "phone": "not_provided"
+      },
+      "category": "unanswered_faq",
+      "threadId": null,
+      "createdAt": "2025-11-17T00:23:44.272Z",
+      "status": "open",
+      "assignedTo": null,
+      "resolvedAt": null
     }
   },
-  "nextTicketId": 23
+  "nextTicketId": 33
 }

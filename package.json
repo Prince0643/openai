@@ -11,7 +11,16 @@
     "test:broadcast": "node test_broadcast.js",
     "test:wati": "node test_wati_broadcast.js",
     "test:yoga-link": "node test_yoga_booking_link.js",
-    "test:tool-link": "node test_tool_booking_link.js"
+    "test:tool-link": "node test_tool_booking_link.js",
+    "test:faq": "node test_faq.js",
+    "test:webhook-faq": "node test_webhook_faq.js",
+    "test:webhook-booking": "node test_booking_webhook.js",
+    "test:direct-booking": "node test_direct_booking.js",
+    "test:comprehensive": "node comprehensive_test.js",
+    "test:demo": "node response_demo.js",
+    "test:simple": "node simple_test.js",
+    "test:intent": "node intent_test.js",
+    "test:complete": "node complete_demo.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",

@@ -22,6 +22,8 @@ import {
   handleRefundInquiry 
 } from "./refundsGuardrail.js";
 import { scheduleWatiBroadcast } from "./watiBroadcast.js";
+import faqManager from "./faqManager.js";
+import { handleFAQRequest } from "./faqMiddleware.js";
 
 // Load environment variables
 const dotenvResult = dotenv.config();
@@ -362,31 +364,18 @@ app.post("/process-message", requireBackendKey, async (req, res) => {
     
     const { message, threadId, userId } = req.body;
     
-    if (!message) {
+    if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
     }
     
-    let thread;
-    
-    // Create or retrieve thread
-    if (threadId) {
-      // Retrieve existing thread
-      thread = await openai.beta.threads.retrieve(threadId);
-    } else {
-      // Create new thread
-      thread = await openai.beta.threads.create();
+    // First, check if the question is in our FAQ database
+    const faqResponse = await handleFAQRequest(message, userId, platform);
+    if (faqResponse) {
+      // Found an FAQ match or escalated to human agent
+      return res.json(faqResponse);
     }
     
-    // Add message to thread
-    await openai.beta.threads.messages.create(thread.id, {
-      role: "user",
-      content: message
-    });
-    
-    // Run the assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: "asst_xy382A6ksEJ9JwYfSyVDfSBp" // Your assistant ID from openaiassistant.json
-    });
+    // Check if this is a specific class request that we can handle directly
     
     // Wait for completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
@@ -753,6 +742,13 @@ app.post("/make/webhook", async (req, res) => {
     
     if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
+    }
+    
+    // First, check if the question is in our FAQ database
+    const faqResponse = await handleFAQRequest(message, userId, platform);
+    if (faqResponse) {
+      // Found an FAQ match or escalated to human agent
+      return res.json(faqResponse);
     }
     
     // Check if this is a specific class request that we can handle directly
@@ -1378,7 +1374,7 @@ app.post("/make/webhook", async (req, res) => {
         console.error("OpenAI processing error:", openaiError);
         // Fallback to simple response if OpenAI fails
         return res.json({
-          response: "I received your message. I'm currently unable to process it with AI assistance, but I'll get back to you soon.",
+          response: "I received your message. I'm currently unable to process it with assistance, but I'll get back to you soon.",
           userId: userId,
           success: true,
           platform: platform
