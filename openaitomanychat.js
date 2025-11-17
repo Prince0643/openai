@@ -484,7 +484,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 limitedSchedule.forEach(classItem => {
                   const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                   responseText += `\n${classTime}: ${classItem.name}`;
-                  if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                  if (classItem.coach) responseText += ` – ${classItem.coach}`;
                 });
                 responseText += "\nWant to see more classes or another day?";
               }
@@ -509,7 +509,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 const classTime = new Date(classItem.start).toLocaleDateString([], {weekday: 'long', month: 'short', day: 'numeric'});
                 const classHour = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 responseText += `\n${classTime} at ${classHour}: ${classItem.name}`;
-                if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                if (classItem.coach) responseText += ` – ${classItem.coach}`;
                 
                 // Use classId if available, otherwise fallback to general booking link
                 if (classItem.classId) {
@@ -780,7 +780,7 @@ app.post("/make/webhook", async (req, res) => {
             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
-            if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
+            if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
             responseText += ".\n\n";
             // Use classId if available, otherwise fallback to general booking link
             if (matchingClass.classId) {
@@ -928,7 +928,7 @@ app.post("/make/webhook", async (req, res) => {
                             limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
                           }
                           break;
@@ -966,7 +966,7 @@ app.post("/make/webhook", async (req, res) => {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
                             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
-                            if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
+                            if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
                             if (matchingClass.classId) {
@@ -994,7 +994,7 @@ app.post("/make/webhook", async (req, res) => {
                             limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
                             responseText += "\nWhich day are you interested in?";
                           }
@@ -1050,7 +1050,7 @@ app.post("/make/webhook", async (req, res) => {
                             dailySchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              if (classItem.coach) responseText += ` – ${classItem.coach}`;
                               responseText += "\n";
                             });
                             responseText += "\nWhich day are you looking for?";
@@ -1090,7 +1090,7 @@ app.post("/make/webhook", async (req, res) => {
                             const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
                             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
-                            if (matchingClass.coach) responseText += ` with ${matchingClass.coach}`;
+                            if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
                             responseText += ".\n\n";
                             // Use classId if available, otherwise fallback to general booking link
                             if (matchingClass.classId) {
@@ -1118,7 +1118,7 @@ app.post("/make/webhook", async (req, res) => {
                             limitedSchedule.forEach(classItem => {
                               const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                               responseText += `\n${classTime}: ${classItem.name}`;
-                              if (classItem.coach) responseText += ` with ${classItem.coach}`;
+                              if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
                             responseText += "\nWhich day are you interested in?";
                           }
@@ -1727,7 +1727,7 @@ function formatGroupedClasses(timeGroups) {
     responseText += "\n\nMORNING\n";
     const groupedMorning = groupConsecutiveClasses(timeGroups.morning);
     // Limit to 3 classes per time group
-    const limitedMorning = groupedMorning.slice(0, 3);
+    const limitedMorning = groupedMorning;
     limitedMorning.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1742,7 +1742,7 @@ function formatGroupedClasses(timeGroups) {
         const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         responseText += `\n${classTime}: ${classItem.name}`;
       }
-      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+      if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
   
@@ -1750,7 +1750,7 @@ function formatGroupedClasses(timeGroups) {
     responseText += "\n\nAFTERNOON\n";
     const groupedAfternoon = groupConsecutiveClasses(timeGroups.afternoon);
     // Limit to 3 classes per time group
-    const limitedAfternoon = groupedAfternoon.slice(0, 3);
+    const limitedAfternoon = groupedAfternoon;
     limitedAfternoon.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1765,7 +1765,7 @@ function formatGroupedClasses(timeGroups) {
         const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         responseText += `\n${classTime}: ${classItem.name}`;
       }
-      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+      if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
   
@@ -1773,7 +1773,7 @@ function formatGroupedClasses(timeGroups) {
     responseText += "\n\nEVENING\n";
     const groupedEvening = groupConsecutiveClasses(timeGroups.evening);
     // Limit to 3 classes per time group
-    const limitedEvening = groupedEvening.slice(0, 3);
+    const limitedEvening = groupedEvening;
     limitedEvening.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
         const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1788,7 +1788,7 @@ function formatGroupedClasses(timeGroups) {
         const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         responseText += `\n${classTime}: ${classItem.name}`;
       }
-      if (classItem.coach) responseText += ` with ${classItem.coach}`;
+      if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
   
