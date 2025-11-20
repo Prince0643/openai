@@ -1,4 +1,5 @@
 import express from "express";
+import { logUserToSheet } from "./userLogger.js";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import OpenAI from "openai";
@@ -739,6 +740,19 @@ app.post("/make/webhook", async (req, res) => {
     }
     
     console.log(`Parsed payload - Message: "${message}", UserId: "${userId}", Platform: "${platform}"`);
+
+        // 🔴 ALWAYS log to Google Sheets via Apps Script (fire-and-forget)
+    logUserToSheet({
+      userId,
+      platform,
+      threadId,
+      message,
+      source: "make_webhook",
+      extra: req.body, // full payload, useful for later
+    }).catch((err) => {
+      console.error("[userLogger] Failed to log user:", err);
+    });
+
     
     if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
