@@ -1569,40 +1569,47 @@ function filterAndLimitDailySchedule(schedule, date) {
  * @returns {string} - One of: 'weekly', 'full_day', 'specific_class', 'daily'
  */
 function determineScheduleViewType(userMessage) {
-  if (!userMessage) return 'daily';
-  
-  const lowerMessage = userMessage.toLowerCase();
-  
-  // WEEKLY VIEW detection
-  if (lowerMessage.includes('week') || 
-      lowerMessage.includes('weekly schedule') || 
-      lowerMessage.includes('week ahead') || 
-      lowerMessage.includes('next 7 days') ||
-      lowerMessage.includes('this week')) {
+  // DEFAULT = full_day
+  if (!userMessage) return 'full_day';
+
+  const msg = userMessage.toLowerCase();
+
+  if (
+    msg.includes('week') ||
+    msg.includes('weekly schedule') ||
+    msg.includes('week ahead') ||
+    msg.includes('next 7 days') ||
+    msg.includes('this week')
+  ) {
     return 'weekly';
   }
-  
-  // FULL DAY VIEW detection
-  if (lowerMessage.includes('full day') || 
-      lowerMessage.includes('all classes') || 
-      lowerMessage.includes('entire day') || 
-      lowerMessage.includes('full') || 
-      lowerMessage.includes('today') || 
-      lowerMessage.includes('whole day')) {
+
+  if (
+    msg.includes('full day') ||
+    msg.includes('all classes') ||
+    msg.includes('entire day') ||
+    msg.includes('full') ||
+    msg.includes('today') ||
+    msg.includes('whole day')
+  ) {
     return 'full_day';
   }
-  
-  // SPECIFIC CLASS detection
-  const classKeywords = ['yoga', 'hiit', 'spin', 'pilates', 'handstands', 'strength training'];
-  for (const keyword of classKeywords) {
-    if (lowerMessage.includes(keyword)) {
-      return 'specific_class';
-    }
+
+  if (
+    msg.includes('yoga') ||
+    msg.includes('hiit') ||
+    msg.includes('spin') ||
+    msg.includes('pilates') ||
+    msg.includes('handstands') ||
+    msg.includes('strength training')
+  ) {
+    return 'specific_class';
   }
-  
-  // DAILY VIEW (default)
-  return 'daily';
+
+  // DEFAULT fallback = full_day
+  return 'full_day';
 }
+
 
 /**
  * Group consecutive classes with the same name and summarize their time ranges
