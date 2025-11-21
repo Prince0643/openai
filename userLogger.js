@@ -5,7 +5,7 @@
 import fetch from "node-fetch"; // make sure node-fetch is installed: npm install node-fetch
 
 // Put your Apps Script Web App URL here
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXFjsV8QepWUSUKj-dkGCWvYX6TRBi3ZN7SmGvqo9rLVz3_dYWqYz3wrXMl-Gyzu5oGQ/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl_iDWLTrJJ6rtSywWuxABC2j7k5zcRDQBoYPlHUbptn01nqPcOu05NytKnAnHca-VKA/exec";
 
 /**
  * Log user data into the "Users" sheet via Apps Script.
