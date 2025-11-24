@@ -8,13 +8,13 @@ import { createTicket } from './staffHandoffManager.js';
  */
 function isBookingRequest(message) {
   const lowerMessage = message.toLowerCase();
-  return lowerMessage.includes('book') || 
-         lowerMessage.includes('yoga') || 
-         lowerMessage.includes('hiit') || 
-         lowerMessage.includes('pilates') || 
-         lowerMessage.includes('spin') || 
-         lowerMessage.includes('handstands') || 
-         lowerMessage.includes('strength');
+  return lowerMessage.includes('book') ||
+    lowerMessage.includes('yoga') ||
+    lowerMessage.includes('hiit') ||
+    lowerMessage.includes('pilates') ||
+    lowerMessage.includes('spin') ||
+    lowerMessage.includes('handstands') ||
+    lowerMessage.includes('strength');
 }
 
 /**
@@ -24,12 +24,12 @@ function isBookingRequest(message) {
  */
 function isScheduleRequest(message) {
   const lowerMessage = message.toLowerCase();
-  return lowerMessage.includes('schedule') || 
-         lowerMessage.includes('class') || 
-         lowerMessage.includes('classes') || 
-         lowerMessage.includes('today') || 
-         lowerMessage.includes('tomorrow') || 
-         lowerMessage.includes('week');
+  return lowerMessage.includes('schedule') ||
+    lowerMessage.includes('class') ||
+    lowerMessage.includes('classes') ||
+    lowerMessage.includes('today') ||
+    lowerMessage.includes('tomorrow') ||
+    lowerMessage.includes('week');
 }
 
 /**
@@ -47,10 +47,10 @@ async function handleFAQRequest(message, userId, platform) {
       console.log(`Booking/schedule request detected: "${message}", allowing specialized handler to process`);
       return null;
     }
-    
+
     // First, check if the question is in our FAQ database
     const faqResult = await faqManager.checkFAQ(message);
-    
+
     if (faqResult.found) {
       // Found an FAQ match, return the predefined response
       console.log(`FAQ match found for question: "${message}"`);
@@ -65,7 +65,7 @@ async function handleFAQRequest(message, userId, platform) {
     } else {
       // No FAQ match found, escalate to human agent
       console.log(`No FAQ match found for question: "${message}", escalating to human agent`);
-      
+
       // Create a ticket for the unanswered question
       const ticket = createTicket({
         userId: userId || "unknown_user",
@@ -74,7 +74,7 @@ async function handleFAQRequest(message, userId, platform) {
         category: "unanswered_faq",
         threadId: null
       });
-      
+
       return {
         response: faqResult.reply, // This will be the "I'm not sure" message
         userId: userId,
@@ -91,4 +91,27 @@ async function handleFAQRequest(message, userId, platform) {
   }
 }
 
-export { handleFAQRequest };
+/**
+ * Get FAQ context for the AI (no direct answer, no escalation)
+ * @param {string} message - User's message
+ * @returns {Promise<Array<{question:string, reply:string}>>}
+ */
+async function getFAQContext(message) {
+  try {
+    // Still let booking/schedule stuff bypass FAQ context
+    if (isBookingRequest(message) || isScheduleRequest(message)) {
+      console.log(`Booking/schedule request detected: "${message}", skipping FAQ context`);
+      return [];
+    }
+
+    const relatedFaqs = await faqManager.getTopRelevantFAQs(message, 5);
+    console.log(`FAQ context fetched: ${relatedFaqs.length} entries for message "${message}"`);
+    return relatedFaqs;
+  } catch (error) {
+    console.error("Error getting FAQ context:", error);
+    return [];
+  }
+}
+
+
+export { handleFAQRequest, getFAQContext };

@@ -5,26 +5,27 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import GymMasterAPI from "./gymmaster.js";
 import { getUserThread, setUserThread } from "./threadStorage.js";
-import { 
-  addTemplate, 
-  approveTemplate, 
-  isTemplateApproved, 
-  optInUser, 
-  optOutUser, 
-  isUserOptedIn, 
-  getOptedInUsers, 
-  sendBroadcast 
+import {
+  addTemplate,
+  approveTemplate,
+  isTemplateApproved,
+  optInUser,
+  optOutUser,
+  isUserOptedIn,
+  getOptedInUsers,
+  sendBroadcast
 } from "./broadcastManager.js";
 import { createTicket } from "./staffHandoffManager.js";
 import { handleFallback, handleToolError } from "./fallbackManager.js";
-import { 
-  handleRefundsGuardrail, 
-  isAskingAboutRefunds, 
-  handleRefundInquiry 
+import {
+  handleRefundsGuardrail,
+  isAskingAboutRefunds,
+  handleRefundInquiry
 } from "./refundsGuardrail.js";
 import { scheduleWatiBroadcast } from "./watiBroadcast.js";
 import faqManager from "./faqManager.js";
-import { handleFAQRequest } from "./faqMiddleware.js";
+import { getFAQContext } from "./faqMiddleware.js";
+
 
 // Load environment variables
 const dotenvResult = dotenv.config();
@@ -40,7 +41,7 @@ const config = {
 
 const app = express();
 // Add proper JSON parsing with character encoding handling
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb',
   type: 'application/json'
 }));
@@ -109,7 +110,7 @@ function requireBackendKey(req, res, next) {
   if (!BACKEND_API_KEY) {
     return next();
   }
-  
+
   const auth = req.headers.authorization || "";
   if (auth !== `Bearer ${BACKEND_API_KEY}`) {
     return res.status(401).json({ error: true, message: "Unauthorized" });
@@ -124,9 +125,9 @@ app.get("/health", (req, res) => {
     backendKey: !!BACKEND_API_KEY,
     openai: !!OPENAI_API_KEY
   };
-  
-  res.json({ 
-    status: "OK", 
+
+  res.json({
+    status: "OK",
     timestamp: new Date().toISOString(),
     config: configStatus,
     env: {
@@ -144,16 +145,16 @@ app.post("/member/login", async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { email, password } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({ error: true, message: "Email is required" });
     }
-    
+
     // Password is optional for passwordless login
     const loginResult = await gymMaster.loginMember(email, password || "");
-    
+
     return res.json(loginResult);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Login failed: " + e.message });
@@ -164,16 +165,16 @@ app.post("/member/login", async (req, res) => {
 app.post("/find_or_create_member", requireBackendKey, async (req, res) => {
   try {
     const { email, phone, name } = req.body;
-    
+
     if (!email || !phone) {
       return res.status(400).json({ error: true, message: "Email and phone are required" });
     }
-    
+
     // In a real implementation, you would check if the member exists
     // and create them if they don't. For now, we'll just return a mock memberId.
     // A full implementation would use the GymMaster member APIs.
     const memberId = "mem_" + Date.now();
-    
+
     return res.json({ memberId });
   } catch (e) {
     return res.status(500).json({ error: true, message: "Member lookup failed: " + e.message });
@@ -186,14 +187,14 @@ app.get("/schedule/public", async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { date_from, date_to, branchId } = req.query;
-    
+
     // Use date_from or default to current date
     const week = date_from || new Date().toISOString().split('T')[0];
-    
+
     const schedule = await gymMaster.getClassSchedule(week, branchId);
-    
+
     return res.json(schedule);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
@@ -206,16 +207,16 @@ app.get("/class/seats/:classId", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { classId } = req.params;
     const { token } = req.query;
-    
+
     if (!classId) {
       return res.status(400).json({ error: true, message: "classId is required" });
     }
-    
+
     const seats = await gymMaster.getClassSeats(classId, token);
-    
+
     return res.json(seats);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot get class seats: " + e.message });
@@ -228,15 +229,15 @@ app.post("/book/class", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { memberId, classId, token } = req.body;
-    
+
     if (!memberId || !classId || !token) {
       return res.status(400).json({ error: true, message: "memberId, classId, and token are required" });
     }
-    
+
     const booking = await gymMaster.bookClass(token, classId);
-    
+
     return res.json(booking);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot book class: " + e.message });
@@ -249,15 +250,15 @@ app.post("/cancel/booking", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { bookingId, token } = req.body;
-    
+
     if (!bookingId || !token) {
       return res.status(400).json({ error: true, message: "bookingId and token are required" });
     }
-    
+
     const cancellation = await gymMaster.cancelBooking(token, bookingId);
-    
+
     return res.json(cancellation);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot cancel booking: " + e.message });
@@ -270,20 +271,20 @@ app.get("/member/:memberId/memberships", requireBackendKey, async (req, res) => 
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { memberId } = req.params;
     const { token } = req.query;
-    
+
     if (!memberId) {
       return res.status(400).json({ error: true, message: "memberId is required" });
     }
-    
+
     if (!token) {
       return res.status(400).json({ error: true, message: "token is required" });
     }
-    
+
     const memberships = await gymMaster.getMemberMemberships(token);
-    
+
     return res.json(memberships);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot get memberships: " + e.message });
@@ -296,20 +297,20 @@ app.get("/member/:memberId/profile", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { memberId } = req.params;
     const { token } = req.query;
-    
+
     if (!memberId) {
       return res.status(400).json({ error: true, message: "memberId is required" });
     }
-    
+
     if (!token) {
       return res.status(400).json({ error: true, message: "token is required" });
     }
-    
+
     const profile = await gymMaster.getMemberProfile(token);
-    
+
     return res.json(profile);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot get profile: " + e.message });
@@ -322,15 +323,15 @@ app.post("/save/lead", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const { name, phone, email, interest } = req.body;
-    
+
     if (!name || !phone || !email || !interest) {
       return res.status(400).json({ error: true, message: "name, phone, email, and interest are required" });
     }
-    
+
     const lead = await gymMaster.createProspect(name, email, phone, interest);
-    
+
     return res.json(lead);
   } catch (e) {
     return res.status(500).json({ error: true, message: "Cannot save lead: " + e.message });
@@ -343,10 +344,10 @@ app.get("/catalog", requireBackendKey, async (req, res) => {
     if (!gymMaster) {
       return res.status(500).json({ error: true, message: "GymMaster API not configured" });
     }
-    
+
     const memberships = await gymMaster.listMemberships();
     const clubs = await gymMaster.listClubs();
-    
+
     return res.json({
       memberships: memberships,
       clubs: clubs
@@ -362,52 +363,52 @@ app.post("/process-message", requireBackendKey, async (req, res) => {
     if (!openai) {
       return res.status(500).json({ error: true, message: "OpenAI not configured" });
     }
-    
+
     const { message, threadId, userId } = req.body;
-    
+
     if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
     }
-    
+
     // First, check if the question is in our FAQ database
     const faqResponse = await handleFAQRequest(message, userId, platform);
     if (faqResponse) {
       // Found an FAQ match or escalated to human agent
       return res.json(faqResponse);
     }
-    
+
     // Check if this is a specific class request that we can handle directly
-    
+
     // Wait for completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    
+
     // Add timeout to prevent infinite waiting
     const maxWaitTime = 30000; // 30 seconds
     const startTime = Date.now();
-    
+
     while (runStatus.status !== "completed" && runStatus.status !== "failed" && (Date.now() - startTime) < maxWaitTime) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
-    
+
     if (runStatus.status === "failed") {
       return res.status(500).json({ error: true, message: "Assistant run failed" });
     }
-    
+
     if (runStatus.status !== "completed") {
       return res.status(500).json({ error: true, message: "Assistant run timed out" });
     }
-    
+
     // Get the response
     const messages = await openai.beta.threads.messages.list(thread.id);
     const latestMessage = messages.data[0];
-    
+
     // Extract text from the response
     let responseText = "";
     if (latestMessage.content && latestMessage.content.length > 0) {
       responseText = latestMessage.content[0].text.value;
     }
-    
+
     // Return response with thread ID for continuity
     return res.json({
       response: responseText,
@@ -424,9 +425,9 @@ app.post("/process-message", requireBackendKey, async (req, res) => {
 app.post("/tool-call", requireBackendKey, async (req, res) => {
   try {
     const { tool_name, tool_args } = req.body;
-    
+
     console.log(`Handling tool call: ${tool_name}`, JSON.stringify(tool_args, null, 2));
-    
+
     // Route to appropriate tool handler
     switch (tool_name) {
       case "member_login":
@@ -439,31 +440,31 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         } catch (e) {
           return res.status(500).json({ error: true, message: "Login failed: " + e.message });
         }
-        
+
       case "find_or_create_member":
         // In a real implementation, you would use GymMaster APIs
         return res.json({ memberId: "mem_" + Date.now() });
-        
+
       case "get_schedule_public":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
         }
         try {
           console.log("Calling GymMaster getClassSchedule with:", tool_args.date_from, tool_args.branchId);
-          
+
           // Use date_from or default to current date
           const week = tool_args.date_from || new Date().toISOString().split('T')[0];
-          
+
           const schedule = await gymMaster.getClassSchedule(week, tool_args.branchId);
           console.log("GymMaster response:", JSON.stringify(schedule, null, 2));
-          
+
           // Determine the view type based on a mock message (since we don't have access to the actual user message here)
           // In a real implementation, you would pass the user message to this endpoint
           const viewType = 'daily'; // Default to daily view for direct calls
-          
+
           // Format response based on view type
           let responseText = "";
-          
+
           switch (viewType) {
             case 'daily':
               // Filter schedule for today and limit to next 2 classes
@@ -473,45 +474,45 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
                 const classDate = new Date(classItem.start);
                 return classDate.toDateString() === today.toDateString();
               });
-              
+
               // Sort classes by time
               filteredSchedule.sort((a, b) => new Date(a.start) - new Date(b.start));
-              
+
               if (filteredSchedule.length === 0) {
                 responseText = "No more classes today. Want to see tomorrow's schedule?";
               } else {
                 responseText = "Here are the next available classes:";
                 const limitedSchedule = filteredSchedule.slice(0, 2);
                 limitedSchedule.forEach(classItem => {
-                  const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                  const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   responseText += `\n${classTime}: ${classItem.name}`;
                   if (classItem.coach) responseText += ` – ${classItem.coach}`;
                 });
                 responseText += "\nWant to see more classes or another day?";
               }
               break;
-              
+
             case 'full_day':
               // Group classes by time periods and format response
               const timeGroups = groupClassesByTimePeriod(schedule);
               responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
               responseText += "\n\nWant to see another day?";
               break;
-              
+
             case 'weekly':
               // For weekly view, show a message asking which day they want to see
               responseText = "I can show you the schedule for any day this week. Which day would you like to see?";
               break;
-              
+
             case 'specific_class':
               // For specific class requests, show all instances of that class
               responseText = "Here are the upcoming sessions:";
               schedule.forEach(classItem => {
-                const classTime = new Date(classItem.start).toLocaleDateString([], {weekday: 'long', month: 'short', day: 'numeric'});
-                const classHour = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const classTime = new Date(classItem.start).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                const classHour = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 responseText += `\n${classTime} at ${classHour}: ${classItem.name}`;
                 if (classItem.coach) responseText += ` – ${classItem.coach}`;
-                
+
                 // Use classId if available, otherwise fallback to general booking link
                 if (classItem.classId) {
                   responseText += `\nhttps://omni.gymmasteronline.com/portal/account/book/class?classId=${classItem.classId}`;
@@ -522,13 +523,13 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
               });
               break;
           }
-          
+
           return res.json({ message: responseText });
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot load schedule: " + e.message });
         }
-        
+
       case "get_class_seats":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -542,7 +543,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot get class seats: " + e.message });
         }
-        
+
       case "book_class":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -552,16 +553,16 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           const { classId } = tool_args;
           // Generate a booking link - using your GymMaster portal URL
           const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
-          
+
           // Return a response that includes the booking link in plain text format
           const responseText = `Please use the link below to complete your booking:\n${bookingLink}`;
-          
+
           return res.json({ message: responseText });
         } catch (e) {
           console.error("Error generating booking link:", e);
           return res.status(500).json({ error: true, message: "Cannot generate booking link: " + e.message });
         }
-        
+
       case "cancel_booking":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -575,7 +576,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot cancel booking: " + e.message });
         }
-        
+
       case "get_member_memberships":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -589,7 +590,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot get memberships: " + e.message });
         }
-        
+
       case "list_catalog":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -600,17 +601,17 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           console.log("GymMaster listMemberships response:", JSON.stringify(memberships, null, 2));
           const clubs = await gymMaster.listClubs();
           console.log("GymMaster listClubs response:", JSON.stringify(clubs, null, 2));
-          
+
           // Format as plain text response for membership options
           let responseText = "Here are our membership options:\n";
-          
+
           // Add memberships
           if (memberships && memberships.length > 0) {
             memberships.forEach(membership => {
               responseText += `- ${membership.name}: ${membership.description || ''}\n`;
             });
           }
-          
+
           // Add clubs/locations
           if (clubs && clubs.length > 0) {
             responseText += "\nOur locations:\n";
@@ -618,16 +619,16 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
               responseText += `- ${club.name}: ${club.address || ''}\n`;
             });
           }
-          
+
           // Add official booking link at the end
           responseText += "\nFor pricing and to sign up: https://omni.gymmasteronline.com/portal/account";
-          
+
           return res.json({ message: responseText });
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot list catalog: " + e.message });
         }
-        
+
       case "save_lead":
         if (!gymMaster) {
           return res.status(500).json({ error: true, message: "GymMaster API not configured" });
@@ -635,22 +636,22 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
         try {
           console.log("Calling GymMaster createProspect with:", tool_args.name, tool_args.phone, tool_args.email, tool_args.interest);
           const lead = await gymMaster.createProspect(
-            tool_args.name, 
-            tool_args.phone, 
-            tool_args.email, 
+            tool_args.name,
+            tool_args.phone,
+            tool_args.email,
             tool_args.interest
           );
           console.log("GymMaster response:", JSON.stringify(lead, null, 2));
-          
+
           // Format as plain text response for lead capture
           const responseText = "Thank you for your interest! Our team will contact you shortly.";
-          
+
           return res.json({ message: responseText, success: true });
         } catch (e) {
           console.error("GymMaster API error:", e);
           return res.status(500).json({ error: true, message: "Cannot save lead: " + e.message });
         }
-        
+
       case "handoff_to_staff":
         // Create a proper ticket in the support system with conversation context
         try {
@@ -658,7 +659,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           let category = "unclear_request";
           const messageContent = tool_args.message || "";
           const lowerMessage = messageContent.toLowerCase();
-          
+
           if (lowerMessage.includes("lost")) {
             category = "lost_and_found";
           } else if (lowerMessage.includes("complaint")) {
@@ -666,7 +667,7 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
           } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
             category = "refund_inquiry";
           }
-          
+
           const ticket = createTicket({
             userId: tool_args.userId || "unknown_user",
             message: messageContent || "Assistant requested staff handoff",
@@ -674,18 +675,18 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
             category: category,
             threadId: tool_args.threadId || null
           });
-          
+
           const responseText = "I've alerted our staff and created a ticket for you. Someone will reach out shortly.";
-          
+
           return res.json({ message: responseText, ticketId: ticket.ticketId });
         } catch (error) {
           console.error("Error creating staff ticket:", error);
-          return res.status(500).json({ 
-            error: true, 
-            message: "Failed to create staff ticket: " + error.message 
+          return res.status(500).json({
+            error: true,
+            message: "Failed to create staff ticket: " + error.message
           });
         }
-        
+
       default:
         return res.status(400).json({ error: true, message: "Unknown tool: " + tool_name });
     }
@@ -699,9 +700,9 @@ app.post("/tool-call", requireBackendKey, async (req, res) => {
 app.post("/make/webhook", async (req, res) => {
   try {
     console.log("Received webhook from Make.com:", JSON.stringify(req.body, null, 2));
-    
+
     let message, userId, threadId, platform;
-    
+
     // Handle different payload formats
     if (Array.isArray(req.body) && req.body.length > 0) {
       // Wati format - array of messages
@@ -722,14 +723,14 @@ app.post("/make/webhook", async (req, res) => {
       userId = "";
       threadId = null;
       platform = "unknown";
-      
+
       // Try to find message and userId in the body
       if (req.body && typeof req.body === 'object') {
         // Look for common message fields
         message = req.body.text || req.body.message || req.body.content || "";
         // Look for common user ID fields
         userId = req.body.waId || req.body.userId || req.body.senderId || req.body.from || "";
-        
+
         // Determine platform based on fields present
         if (req.body.waId) {
           platform = "wati";
@@ -738,10 +739,10 @@ app.post("/make/webhook", async (req, res) => {
         }
       }
     }
-    
+
     console.log(`Parsed payload - Message: "${message}", UserId: "${userId}", Platform: "${platform}"`);
 
-        // 🔴 ALWAYS log to Google Sheets via Apps Script (fire-and-forget)
+    // 🔴 ALWAYS log to Google Sheets via Apps Script (fire-and-forget)
     logUserToSheet({
       userId,
       platform,
@@ -753,18 +754,11 @@ app.post("/make/webhook", async (req, res) => {
       console.error("[userLogger] Failed to log user:", err);
     });
 
-    
+
     if (!message || message.trim() === "") {
       return res.status(400).json({ error: true, message: "Message is required" });
     }
-    
-    // First, check if the question is in our FAQ database
-    const faqResponse = await handleFAQRequest(message, userId, platform);
-    if (faqResponse) {
-      // Found an FAQ match or escalated to human agent
-      return res.json(faqResponse);
-    }
-    
+
     // Check if this is a specific class request that we can handle directly
     const lowerMessage = message.toLowerCase();
     if (lowerMessage.includes('yoga') || lowerMessage.includes('hiit') || lowerMessage.includes('pilates') || lowerMessage.includes('spin') || lowerMessage.includes('handstands') || lowerMessage.includes('strength')) {
@@ -773,7 +767,7 @@ app.post("/make/webhook", async (req, res) => {
         if (gymMaster) {
           const today = new Date().toISOString().split('T')[0];
           const schedule = await gymMaster.getClassSchedule(today);
-          
+
           // Determine which class type the user is asking about
           let className = "";
           if (lowerMessage.includes('yoga')) className = "yoga";
@@ -782,17 +776,17 @@ app.post("/make/webhook", async (req, res) => {
           else if (lowerMessage.includes('pilates')) className = "pilates";
           else if (lowerMessage.includes('handstands')) className = "handstands";
           else if (lowerMessage.includes('strength')) className = "strength";
-          
+
           // Use our findNextSpecificClass function to get the next available class
           let matchingClass = null;
           if (className) {
             matchingClass = findNextSpecificClass(schedule, className);
           }
-          
+
           let responseText;
           if (matchingClass) {
-            const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+            const classTime = new Date(matchingClass.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const classDate = new Date(matchingClass.start).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
             if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
             responseText += ".\n\n";
@@ -806,7 +800,7 @@ app.post("/make/webhook", async (req, res) => {
             // Provide direct booking link when no matching classes found
             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
           }
-          
+
           return res.json({
             response: responseText,
             userId: userId,
@@ -823,15 +817,41 @@ app.post("/make/webhook", async (req, res) => {
         // Fall back to AI if there's an error
       }
     }
-    
+
+    // ✅ Build FAQ context for the AI (knowledge base style)
+    let userContent = message;
+
+    try {
+      const faqContext = await getFAQContext(message);
+
+      if (faqContext && faqContext.length > 0) {
+        const faqContextText =
+          "Here are some internal FAQ entries you can use when answering the user's question:\n\n" +
+          faqContext
+            .map((item, index) =>
+              `FAQ ${index + 1} - Question: ${item.question}\nAnswer: ${item.reply}`
+            )
+            .join("\n\n") +
+          "\n\nWhen answering, rely on this FAQ information as your primary reference. " +
+          "If it doesn't fully answer the question, say you're not sure instead of guessing.\n\n" +
+          "User question: " + message;
+
+        userContent = faqContextText;
+      }
+    } catch (err) {
+      console.error("Error while building FAQ context:", err);
+      // If FAQ context fails, just use user's raw message
+      userContent = message;
+    }
+
     // Process the message through OpenAI if configured
     if (openai) {
       try {
         let thread;
-        
+
         // Check if we have a stored thread ID for this user
         let storedThreadId = getUserThread(userId);
-        
+
         // If we have a stored thread ID, try to retrieve it
         if (storedThreadId) {
           try {
@@ -842,44 +862,45 @@ app.post("/make/webhook", async (req, res) => {
             storedThreadId = null;
           }
         }
-        
+
         // If we don't have a stored thread ID or failed to retrieve it, create a new one
         if (!storedThreadId) {
           thread = await openai.beta.threads.create();
           setUserThread(userId, thread.id);
           console.log(`Created new thread for user ${userId}: ${thread.id}`);
         }
-        
-        // Add message to thread
+
+        // Add message (with FAQ context if available) to thread
         await openai.beta.threads.messages.create(thread.id, {
           role: "user",
-          content: message
+          content: userContent
         });
-        
+
+
         // Run the assistant
         const run = await openai.beta.threads.runs.create(thread.id, {
           assistant_id: "asst_xy382A6ksEJ9JwYfSyVDfSBp" // Your assistant ID from openaiassistant.json
         });
-        
+
         // Wait for completion with timeout and handle tool calls
         let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
         const maxWaitTime = 60000; // 60 seconds
         const startTime = Date.now();
-        
+
         while (runStatus.status !== "completed" && runStatus.status !== "failed" && (Date.now() - startTime) < maxWaitTime) {
           // Handle tool calls if required
           if (runStatus.status === "requires_action" && runStatus.required_action) {
             console.log("Handling tool calls for run:", run.id);
-            
+
             const toolCalls = runStatus.required_action.submit_tool_outputs.tool_calls;
             const toolOutputs = [];
-            
+
             for (const toolCall of toolCalls) {
               const functionName = toolCall.function.name;
               const functionArgs = JSON.parse(toolCall.function.arguments);
-              
+
               console.log(`Calling tool: ${functionName}`, functionArgs);
-              
+
               try {
                 let output;
                 switch (functionName) {
@@ -891,12 +912,12 @@ app.post("/make/webhook", async (req, res) => {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "find_or_create_member":
                     // In a real implementation, you would use GymMaster APIs
                     output = JSON.stringify({ memberId: "mem_" + Date.now() });
                     break;
-                    
+
                   case "get_schedule_public":
                     if (gymMaster) {
                       // For get_schedule_public, we need to handle the parameters correctly
@@ -904,31 +925,31 @@ app.post("/make/webhook", async (req, res) => {
                       const date_from = functionArgs.date_from;
                       const date_to = functionArgs.date_to;
                       const branchId = functionArgs.branchId;
-                      
+
                       // Validate the date - if it's too old, use today's date instead
                       let weekParam = date_from;
                       const today = new Date();
                       const requestedDate = date_from ? new Date(date_from) : today;
-                      
+
                       // If the requested date is more than a few days in the past, use today
                       if (requestedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)) {
                         console.log("Requested date is too old, using today's date instead");
                         weekParam = today.toISOString().split('T')[0];
                       }
-                      
+
                       // If no date provided, use today's date
                       if (!weekParam) {
                         weekParam = today.toISOString().split('T')[0];
                       }
-                      
+
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
-                      
+
                       // Determine the view type based on the user's message
                       const viewType = determineScheduleViewType(message);
-                      
+
                       // Format response based on view type
                       let responseText = "";
-                      
+
                       switch (viewType) {
                         case 'weekly':
                           // For weekly view, show one day at a time (max 4 lines: 1 header + 2 class data + 1 question)
@@ -940,13 +961,13 @@ app.post("/make/webhook", async (req, res) => {
                             // Limit to just 2 classes for weekly view to keep it concise
                             const limitedSchedule = dailySchedule.slice(0, 2);
                             limitedSchedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
                           }
                           break;
-                          
+
                         case 'full_day':
                           // For full day view, show all classes for the day grouped by time periods
                           if (schedule.length === 0) {
@@ -956,12 +977,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
                           }
                           break;
-                          
+
                         case 'specific_class':
                           // For specific class view, find the next class and provide a booking link
                           let matchingClass = null;
                           const lowerMessage = message.toLowerCase();
-                          
+
                           // Determine which class type the user is asking about
                           let className = "";
                           if (lowerMessage.includes('yoga')) className = "yoga";
@@ -970,15 +991,15 @@ app.post("/make/webhook", async (req, res) => {
                           else if (lowerMessage.includes('pilates')) className = "pilates";
                           else if (lowerMessage.includes('handstands')) className = "handstands";
                           else if (lowerMessage.includes('strength')) className = "strength";
-                          
+
                           // Use our findNextSpecificClass function to get the next available class
                           if (className) {
                             matchingClass = findNextSpecificClass(schedule, className);
                           }
-                          
+
                           if (matchingClass) {
-                            const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+                            const classTime = new Date(matchingClass.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            const classDate = new Date(matchingClass.start).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
                             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
                             if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
                             responseText += ".\n\n";
@@ -993,12 +1014,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
                           }
                           break;
-                          
+
                         case 'daily':
                         default:
                           // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
                           const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
-                          
+
                           if (filteredSchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
@@ -1006,7 +1027,7 @@ app.post("/make/webhook", async (req, res) => {
                             // Limit to just 2 classes for daily view to keep it concise
                             const limitedSchedule = filteredSchedule.slice(0, 2);
                             limitedSchedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
@@ -1014,13 +1035,13 @@ app.post("/make/webhook", async (req, res) => {
                           }
                           break;
                       }
-                      
+
                       output = JSON.stringify({ message: responseText });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "get_schedule":
                     if (gymMaster) {
                       // For get_schedule, we need to handle the parameters correctly
@@ -1028,31 +1049,31 @@ app.post("/make/webhook", async (req, res) => {
                       const date_from = functionArgs.date_from;
                       const date_to = functionArgs.date_to;
                       const branchId = functionArgs.branchId;
-                      
+
                       // Validate the date - if it's too old, use today's date instead
                       let weekParam = date_from;
                       const today = new Date();
                       const requestedDate = new Date(date_from);
-                      
+
                       // If the requested date is more than a few days in the past, use today
                       if (requestedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)) {
                         console.log("Requested date is too old, using today's date instead");
                         weekParam = today.toISOString().split('T')[0];
                       }
-                      
+
                       // If no date provided, use today's date
                       if (!weekParam) {
                         weekParam = today.toISOString().split('T')[0];
                       }
-                      
+
                       const schedule = await gymMaster.getClassSchedule(weekParam, branchId);
-                      
+
                       // Determine the view type based on the user's message
                       const viewType = determineScheduleViewType(message);
-                      
+
                       // Format response based on view type
                       let responseText = "";
-                      
+
                       switch (viewType) {
                         case 'weekly':
                           // For weekly view, show one day at a time
@@ -1062,7 +1083,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
                             dailySchedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` – ${classItem.coach}`;
                               responseText += "\n";
@@ -1070,7 +1091,7 @@ app.post("/make/webhook", async (req, res) => {
                             responseText += "\nWhich day are you looking for?";
                           }
                           break;
-                          
+
                         case 'full_day':
                           // For full day view, show all classes for the day grouped by time periods
                           if (schedule.length === 0) {
@@ -1080,12 +1101,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "Here are all classes for today:" + formatGroupedClasses(timeGroups);
                           }
                           break;
-                          
+
                         case 'specific_class':
                           // For specific class view, find the next class and provide a booking link
                           let matchingClass = null;
                           const lowerMessage = message.toLowerCase();
-                          
+
                           // Determine which class type the user is asking about
                           let className = "";
                           if (lowerMessage.includes('yoga')) className = "yoga";
@@ -1094,15 +1115,15 @@ app.post("/make/webhook", async (req, res) => {
                           else if (lowerMessage.includes('pilates')) className = "pilates";
                           else if (lowerMessage.includes('handstands')) className = "handstands";
                           else if (lowerMessage.includes('strength')) className = "strength";
-                          
+
                           // Use our findNextSpecificClass function to get the next available class
                           if (className) {
                             matchingClass = findNextSpecificClass(schedule, className);
                           }
-                          
+
                           if (matchingClass) {
-                            const classTime = new Date(matchingClass.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            const classDate = new Date(matchingClass.start).toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'});
+                            const classTime = new Date(matchingClass.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            const classDate = new Date(matchingClass.start).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
                             responseText = `${matchingClass.name} is at ${classTime} on ${classDate}`;
                             if (matchingClass.coach) responseText += ` – ${matchingClass.coach}`;
                             responseText += ".\n\n";
@@ -1117,12 +1138,12 @@ app.post("/make/webhook", async (req, res) => {
                             responseText = "I couldn't find any classes matching your request right now. You can browse and book classes directly using the link below:\nhttps://omni.gymmasteronline.com/portal/account/book/class/schedule";
                           }
                           break;
-                          
+
                         case 'daily':
                         default:
                           // Apply daily view logic (next 2 classes only for today, max 4 lines: 1 header + 2 class data + 1 question)
                           const filteredSchedule = filterAndLimitDailySchedule(schedule, weekParam);
-                          
+
                           if (filteredSchedule.length === 0) {
                             responseText = "No more classes today. Want to see tomorrow's schedule?";
                           } else {
@@ -1130,7 +1151,7 @@ app.post("/make/webhook", async (req, res) => {
                             // Limit to just 2 classes for daily view to keep it concise
                             const limitedSchedule = filteredSchedule.slice(0, 2);
                             limitedSchedule.forEach(classItem => {
-                              const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                              const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                               responseText += `\n${classTime}: ${classItem.name}`;
                               if (classItem.coach) responseText += ` – ${classItem.coach}`;
                             });
@@ -1138,13 +1159,13 @@ app.post("/make/webhook", async (req, res) => {
                           }
                           break;
                       }
-                      
+
                       output = JSON.stringify({ message: responseText });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "get_class_seats":
                     if (gymMaster) {
                       console.log("Calling GymMaster getClassSeats with:", functionArgs.classId);
@@ -1155,23 +1176,23 @@ app.post("/make/webhook", async (req, res) => {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "book_class":
                     if (gymMaster) {
                       // Instead of actually booking, provide a booking link
                       const { classId } = functionArgs;
                       // Generate a booking link - using your GymMaster portal URL
                       const bookingLink = `https://omni.gymmasteronline.com/portal/account/book/class?classId=${classId}`;
-                      
+
                       // Return a response that includes the booking link in plain text format
                       const responseText = `Please use the link below to complete your booking:\n${bookingLink}`;
-                      
+
                       output = JSON.stringify({ message: responseText });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "cancel_booking":
                     if (gymMaster) {
                       console.log("Calling GymMaster cancelBooking with:", functionArgs.token, functionArgs.bookingId);
@@ -1182,7 +1203,7 @@ app.post("/make/webhook", async (req, res) => {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "get_member_memberships":
                     if (gymMaster) {
                       console.log("Calling GymMaster getMemberMemberships with:", functionArgs.token);
@@ -1193,7 +1214,7 @@ app.post("/make/webhook", async (req, res) => {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "list_catalog":
                     if (gymMaster) {
                       console.log("Calling GymMaster listMemberships");
@@ -1201,17 +1222,17 @@ app.post("/make/webhook", async (req, res) => {
                       console.log("GymMaster listMemberships response:", JSON.stringify(memberships, null, 2));
                       const clubs = await gymMaster.listClubs();
                       console.log("GymMaster listClubs response:", JSON.stringify(clubs, null, 2));
-                      
+
                       // Format as plain text response for membership options
                       let responseText = "Here are our membership options:\n";
-                      
+
                       // Add memberships
                       if (memberships && memberships.length > 0) {
                         memberships.forEach(membership => {
                           responseText += `- ${membership.name}: ${membership.description || ''}\n`;
                         });
                       }
-                      
+
                       // Add clubs/locations
                       if (clubs && clubs.length > 0) {
                         responseText += "\nOur locations:\n";
@@ -1219,36 +1240,36 @@ app.post("/make/webhook", async (req, res) => {
                           responseText += `- ${club.name}: ${club.address || ''}\n`;
                         });
                       }
-                      
+
                       // Add official booking link at the end
                       responseText += "\nFor pricing and to sign up: https://omni.gymmasteronline.com/portal/account";
-                      
+
                       output = JSON.stringify({ message: responseText });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "save_lead":
                     if (gymMaster) {
                       console.log("Calling GymMaster createProspect with:", functionArgs.name, functionArgs.phone, functionArgs.email, functionArgs.interest);
                       const lead = await gymMaster.createProspect(
-                        functionArgs.name, 
-                        functionArgs.phone, 
-                        functionArgs.email, 
+                        functionArgs.name,
+                        functionArgs.phone,
+                        functionArgs.email,
                         functionArgs.interest
                       );
                       console.log("GymMaster response:", JSON.stringify(lead, null, 2));
-                      
+
                       // Format as plain text response for lead capture
                       const responseText = "Thank you for your interest! Our team will contact you shortly.";
-                      
+
                       output = JSON.stringify({ message: responseText, success: true });
                     } else {
                       output = JSON.stringify({ error: true, message: "GymMaster API not configured" });
                     }
                     break;
-                    
+
                   case "handoff_to_staff":
                     // Create a proper ticket in the support system with conversation context
                     try {
@@ -1256,7 +1277,7 @@ app.post("/make/webhook", async (req, res) => {
                       let category = "unclear_request";
                       const messageContent = functionArgs.message || "";
                       const lowerMessage = messageContent.toLowerCase();
-                      
+
                       if (lowerMessage.includes("lost")) {
                         category = "lost_and_found";
                       } else if (lowerMessage.includes("complaint")) {
@@ -1264,7 +1285,7 @@ app.post("/make/webhook", async (req, res) => {
                       } else if (lowerMessage.includes("refund") || lowerMessage.includes("credit") || lowerMessage.includes("free")) {
                         category = "refund_inquiry";
                       }
-                      
+
                       const ticket = createTicket({
                         userId: functionArgs.userId || "unknown_user",
                         message: messageContent || "Assistant requested staff handoff",
@@ -1272,37 +1293,37 @@ app.post("/make/webhook", async (req, res) => {
                         category: category,
                         threadId: functionArgs.threadId || null
                       });
-                      
+
                       const responseText = "I've alerted our staff and created a ticket for you. Someone will reach out shortly.";
-                      
+
                       output = JSON.stringify({ message: responseText, ticketId: ticket.ticketId });
                     } catch (error) {
                       console.error("Error creating staff ticket:", error);
-                      output = JSON.stringify({ 
-                        error: true, 
-                        message: "Failed to create staff ticket: " + error.message 
+                      output = JSON.stringify({
+                        error: true,
+                        message: "Failed to create staff ticket: " + error.message
                       });
                     }
                     break;
-                    
+
                   default:
                     output = JSON.stringify({ error: true, message: `Unknown tool: ${functionName}` });
                 }
-                
+
                 toolOutputs.push({
                   tool_call_id: toolCall.id,
                   output: output
                 });
               } catch (toolError) {
                 console.error(`Error calling tool ${functionName}:`, toolError);
-                
+
                 // Use fallback manager for tool errors
                 const fallbackResult = handleToolError(userId, message, toolError.message, thread.id);
-                
+
                 toolOutputs.push({
                   tool_call_id: toolCall.id,
-                  output: JSON.stringify({ 
-                    error: true, 
+                  output: JSON.stringify({
+                    error: true,
                     message: fallbackResult.response,
                     escalated: fallbackResult.escalated,
                     ticketId: fallbackResult.ticketId
@@ -1310,37 +1331,37 @@ app.post("/make/webhook", async (req, res) => {
                 });
               }
             }
-            
+
             // Submit tool outputs
             console.log("Submitting tool outputs for run:", run.id);
             await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
               tool_outputs: toolOutputs
             });
           }
-          
+
           // Wait before checking status again
           await new Promise(resolve => setTimeout(resolve, 1000));
           runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
         }
-        
+
         if (runStatus.status === "failed") {
           return res.status(500).json({ error: true, message: "Assistant run failed" });
         }
-        
+
         if (runStatus.status !== "completed") {
           return res.status(500).json({ error: true, message: "Assistant run timed out" });
         }
-        
+
         // Get the response
         const messages = await openai.beta.threads.messages.list(thread.id);
         const latestMessage = messages.data[0];
-        
+
         // Extract text from the response
         let responseText = "";
         if (latestMessage.content && latestMessage.content.length > 0) {
           responseText = latestMessage.content[0].text.value;
         }
-        
+
         // Apply refund guardrail first - escalate if user is asking about refunds/credits/freebies
         if (isAskingAboutRefunds(message)) {
           const refundInquiryResult = handleRefundInquiry(userId, message, thread.id);
@@ -1355,10 +1376,10 @@ app.post("/make/webhook", async (req, res) => {
             platform: platform
           });
         }
-        
+
         // Apply fallback and escalation logic
         const fallbackResult = handleFallback(userId, message, responseText, thread.id);
-        
+
         // If fallback didn't escalate, apply refund guardrail to check for prohibited promises
         if (!fallbackResult.escalated) {
           const refundResult = handleRefundsGuardrail(userId, message, fallbackResult.response, thread.id);
@@ -1373,7 +1394,7 @@ app.post("/make/webhook", async (req, res) => {
             platform: platform
           });
         }
-        
+
         // If fallback already escalated, return that result
         return res.json({
           response: fallbackResult.response,
@@ -1414,15 +1435,15 @@ app.post("/make/webhook", async (req, res) => {
 app.post("/broadcast/template", requireBackendKey, async (req, res) => {
   try {
     const { templateId, content, preApproved } = req.body;
-    
+
     if (!templateId || !content) {
       return res.status(400).json({ error: true, message: "templateId and content are required" });
     }
-    
+
     addTemplate(templateId, content, preApproved);
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       message: `Template ${templateId} added successfully`,
       preApproved: preApproved || false
     });
@@ -1435,15 +1456,15 @@ app.post("/broadcast/template", requireBackendKey, async (req, res) => {
 app.post("/broadcast/approve", requireBackendKey, async (req, res) => {
   try {
     const { templateId } = req.body;
-    
+
     if (!templateId) {
       return res.status(400).json({ error: true, message: "templateId is required" });
     }
-    
+
     approveTemplate(templateId);
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       message: `Template ${templateId} approved successfully`
     });
   } catch (e) {
@@ -1455,15 +1476,15 @@ app.post("/broadcast/approve", requireBackendKey, async (req, res) => {
 app.post("/broadcast/opt-in", async (req, res) => {
   try {
     const { userId, contactInfo } = req.body;
-    
+
     if (!userId || !contactInfo) {
       return res.status(400).json({ error: true, message: "userId and contactInfo are required" });
     }
-    
+
     optInUser(userId, contactInfo);
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       message: `User ${userId} opted in successfully`
     });
   } catch (e) {
@@ -1475,15 +1496,15 @@ app.post("/broadcast/opt-in", async (req, res) => {
 app.post("/broadcast/opt-out", async (req, res) => {
   try {
     const { userId } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: true, message: "userId is required" });
     }
-    
+
     optOutUser(userId);
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       message: `User ${userId} opted out successfully`
     });
   } catch (e) {
@@ -1495,22 +1516,22 @@ app.post("/broadcast/opt-out", async (req, res) => {
 app.post("/broadcast/send", requireBackendKey, async (req, res) => {
   try {
     const { templateId, testUserIds } = req.body;
-    
+
     if (!templateId) {
       return res.status(400).json({ error: true, message: "templateId is required" });
     }
-    
+
     // If testUserIds is provided, this is a test broadcast
     const isTest = testUserIds && Array.isArray(testUserIds);
-    
+
     const result = sendBroadcast(templateId, testUserIds);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: true, message: result.error });
     }
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       message: result.message,
       recipients: result.recipients,
       isTest: isTest
@@ -1524,9 +1545,9 @@ app.post("/broadcast/send", requireBackendKey, async (req, res) => {
 app.get("/broadcast/status", requireBackendKey, async (req, res) => {
   try {
     const optedInCount = getOptedInUsers().length;
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       optedInUsers: optedInCount,
       message: `${optedInCount} users are opted in for broadcasts`
     });
@@ -1559,19 +1580,19 @@ app.listen(PORT, () => {
 function filterAndLimitDailySchedule(schedule, date) {
   const todayStr = new Date().toISOString().split('T')[0];
   const requestedDateStr = date || todayStr;
-  
+
   // If not today, return all classes for that date
   if (requestedDateStr !== todayStr) {
     return schedule;
   }
-  
+
   // For today, filter out past classes (no limit on number of classes)
   const now = new Date();
   const upcomingClasses = schedule.filter(classItem => {
     const classTime = new Date(classItem.start);
     return classTime > now;
   });
-  
+
   // Sort by start time (no limit on number of classes)
   upcomingClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
   return upcomingClasses;
@@ -1663,11 +1684,11 @@ function groupClassesByTimePeriod(schedule) {
     afternoon: [],
     evening: []
   };
-  
+
   schedule.forEach(classItem => {
     const classTime = new Date(classItem.start);
     const hour = classTime.getHours();
-    
+
     if (hour >= 5 && hour < 12) {
       timeGroups.morning.push(classItem);
     } else if (hour >= 12 && hour < 18) {
@@ -1676,12 +1697,12 @@ function groupClassesByTimePeriod(schedule) {
       timeGroups.evening.push(classItem);
     }
   });
-  
+
   // Sort each group by time
   Object.keys(timeGroups).forEach(period => {
     timeGroups[period].sort((a, b) => new Date(a.start) - new Date(b.start));
   });
-  
+
   return timeGroups;
 }
 
@@ -1694,40 +1715,40 @@ function groupClassesByTimePeriod(schedule) {
 function findNextSpecificClass(schedule, className) {
   const lowerClassName = className.toLowerCase();
   const now = new Date();
-  
+
   // Filter classes that match the requested class name
   const matchingClasses = schedule.filter(classItem => {
     const classItemName = classItem.name.toLowerCase();
     return classItemName.includes(lowerClassName);
   });
-  
+
   // Filter out past classes for today
   const upcomingClasses = matchingClasses.filter(classItem => {
     const classTime = new Date(classItem.start);
     return classTime > now;
   });
-  
+
   // Sort by start time
   upcomingClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
-  
+
   // If we have upcoming classes today, return the first one
   if (upcomingClasses.length > 0) {
     return upcomingClasses[0];
   }
-  
+
   // If no upcoming classes today, look for tomorrow's classes
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
-  
+
   const tomorrowClasses = matchingClasses.filter(classItem => {
     const classDate = new Date(classItem.start).toISOString().split('T')[0];
     return classDate === tomorrowStr;
   });
-  
+
   // Sort tomorrow's classes by start time
   tomorrowClasses.sort((a, b) => new Date(a.start) - new Date(b.start));
-  
+
   // Return the first class tomorrow, or null if none
   return tomorrowClasses.length > 0 ? tomorrowClasses[0] : null;
 }
@@ -1743,7 +1764,7 @@ function findNextSpecificClass(schedule, className) {
  */
 function formatGroupedClasses(timeGroups) {
   let responseText = "";
-  
+
   if (timeGroups.morning.length > 0) {
     responseText += "\n\nMORNING\n";
     const groupedMorning = groupConsecutiveClasses(timeGroups.morning);
@@ -1751,8 +1772,8 @@ function formatGroupedClasses(timeGroups) {
     const limitedMorning = groupedMorning;
     limitedMorning.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
-        const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const startTime = classItem.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const endTime = classItem.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         // If start and end times are the same, just show the start time
         if (startTime === endTime) {
           responseText += `\n${startTime}: ${classItem.name}`;
@@ -1760,13 +1781,13 @@ function formatGroupedClasses(timeGroups) {
           responseText += `\n${startTime} - ${endTime}: ${classItem.name}`;
         }
       } else {
-        const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         responseText += `\n${classTime}: ${classItem.name}`;
       }
       if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
-  
+
   if (timeGroups.afternoon.length > 0) {
     responseText += "\n\nAFTERNOON\n";
     const groupedAfternoon = groupConsecutiveClasses(timeGroups.afternoon);
@@ -1774,8 +1795,8 @@ function formatGroupedClasses(timeGroups) {
     const limitedAfternoon = groupedAfternoon;
     limitedAfternoon.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
-        const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const startTime = classItem.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const endTime = classItem.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         // If start and end times are the same, just show the start time
         if (startTime === endTime) {
           responseText += `\n${startTime}: ${classItem.name}`;
@@ -1783,13 +1804,13 @@ function formatGroupedClasses(timeGroups) {
           responseText += `\n${startTime} - ${endTime}: ${classItem.name}`;
         }
       } else {
-        const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         responseText += `\n${classTime}: ${classItem.name}`;
       }
       if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
-  
+
   if (timeGroups.evening.length > 0) {
     responseText += "\n\nEVENING\n";
     const groupedEvening = groupConsecutiveClasses(timeGroups.evening);
@@ -1797,8 +1818,8 @@ function formatGroupedClasses(timeGroups) {
     const limitedEvening = groupedEvening;
     limitedEvening.forEach(classItem => {
       if (classItem.startTime && classItem.endTime) {
-        const startTime = classItem.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const endTime = classItem.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const startTime = classItem.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const endTime = classItem.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         // If start and end times are the same, just show the start time
         if (startTime === endTime) {
           responseText += `\n${startTime}: ${classItem.name}`;
@@ -1806,13 +1827,13 @@ function formatGroupedClasses(timeGroups) {
           responseText += `\n${startTime} - ${endTime}: ${classItem.name}`;
         }
       } else {
-        const classTime = new Date(classItem.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const classTime = new Date(classItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         responseText += `\n${classTime}: ${classItem.name}`;
       }
       if (classItem.coach) responseText += ` – ${classItem.coach}`;
     });
   }
-  
+
   return responseText;
 }
 
